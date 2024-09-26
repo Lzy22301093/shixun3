@@ -1,0 +1,120 @@
+/* 基本全局样式 */
+:root {
+    /* 定义全局字体和样式 */
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; /* 字体系列 */
+    line-height: 1.5; /* 行高 */
+    font-weight: 400; /* 字体粗细 */
+
+    color-scheme: light dark; /* 支持明亮模式和暗色模式 */
+    color: rgb(128, 94, 115); /* 默认文本颜色 */
+    background-color: #fdf2f7; /* 默认背景颜色 */
+
+    font-synthesis: none; /* 禁用字体合成 */
+    text-rendering: optimizeLegibility; /* 优化文本渲染 */
+    -webkit-font-smoothing: antialiased; /* 在 WebKit 浏览器中平滑字体 */
+    -moz-osx-font-smoothing: grayscale; /* 在 Firefox 浏览器中平滑字体 */
+}
+/* 链接样式 */
+a {
+    font-weight: 500; /* 链接字体加粗 */
+    color: #646cff; /* 链接颜色 */
+    text-decoration: inherit; /* 继承父元素的文本装饰 */
+}
+
+a:hover {
+    color: #535bf2; /* 链接悬停时的颜色 */
+}
+
+/* body 样式 */
+body {
+    margin: 0; /* 移除默认边距 */
+    /*padding: 0; !* 移除默认填充 *!*/
+    /*display: flex; !* 使用 Flexbox 布局 *!*/
+    /*place-items: center; !* 在 Flexbox 容器中居中对齐内容 *!*/
+    /*min-width: 320px; !* 设置最小宽度 *!*/
+    /*min-height: 100vh; !* 设置最小高度为视口高度 *!*/
+    /*border: 10px solid #646cff;*/
+}
+
+/* 应用容器样式 */
+#app {
+    /*margin: 0; !* 上下边距为 0，左右边距自动以居中对齐 *!*/
+    /*border: 5px solid #3f3939;*/
+    /*max-width: 1280px; !* 最大宽度 *!*/
+    /*padding: 2rem; !* 内边距 *!*/
+    /*text-align: center; !* 文本居中对齐 *!*/
+}
+
+/*!* 按钮样式 *!*/
+/*button {*/
+/*    border-radius: 8px; !* 圆角边框 *!*/
+/*    border: 1px solid transparent; !* 透明边框，以便悬停时能看到边框颜色变化 *!*/
+/*    padding: 0.6em 1.2em; !* 内边距 *!*/
+/*    font-size: 1em; !* 按钮字体大小 *!*/
+/*    font-weight: 500; !* 按钮字体加粗 *!*/
+/*    font-family: inherit; !* 继承字体 *!*/
+/*    background-color: #1a1a1a; !* 按钮背景颜色 *!*/
+/*    cursor: pointer; !* 鼠标悬停时显示指针 *!*/
+/*    transition: border-color 0.25s; !* 边框颜色变化的过渡效果 *!*/
+/*}*/
+/*button:hover {*/
+/*    border-color: #646cff; !* 按钮悬停时的边框颜色 *!*/
+/*}*/
+/*button:focus,*/
+/*button:focus-visible {*/
+/*    outline: 4px auto -webkit-focus-ring-color; !* 焦点状态下的轮廓样式 *!*/
+/*}*/
+
+/*.card {*/
+/*  padding: 2em;*/
+/*}*/
+
+/*!* 媒体查询 - 针对浅色模式的样式 *!*/
+/*@media (prefers-color-scheme: light) {*/
+/*    :root {*/
+/*        color: #213547; !* 浅色模式下的文本颜色 *!*/
+/*        background-color: #ffffff; !* 浅色模式下的背景颜色 *!*/
+/*    }*/
+
+/*    a:hover {*/
+/*        color: #747bff; !* 浅色模式下的链接悬停颜色 *!*/
+/*    }*/
+
+/*    button {*/
+/*        background-color: #f9f9f9; !* 浅色模式下的按钮背景颜色 *!*/
+/*    }*/
+/*}*/
+
+/*.el-calendar {*/
+/*    font-size: 12px; !* 调整日历字体大小 *!*/
+/*}*/
+
+/*.el-calendar-table {*/
+/*    !*width: 100%;*!*/
+/*    !*table-layout: fixed; !* 固定单元格宽度 *!*!*/
+/*}*/
+
+/*.el-calendar-table td {*/
+/*    height: 40px; !* 调整单元格高度 *!  !* 到80就调不了了 *!*/
+/*    padding: 0; !* 调整单元格的内边距 *!*/
+/*    border: 1px solid black;*/
+/*}*/
+
+/*.el-calendar-table th {*/
+/*    height: 30px; !* 调整周标题单元格高度 *!     !* 默认是30 *!*/
+/*    !*border: 1px solid black;*!*/
+/*}*/
+
+/*.el-calendar-table {*/
+/*    height: 20px;*/
+/*    line-height: 30px; !* 使文本在单元格内居中 *!*/
+/*    !*border: 1px solid black;*!*/
+/*}*/
+/*.el-calendar-day{*/
+/*    height: 200px;*/
+/*    !*border: 1px solid black;*!*/
+/*}*/
+
+/*.el-calendar__header {*/
+/*    font-size: 14px; !* 调整日历标题大小 *!*/
+/*}*/
