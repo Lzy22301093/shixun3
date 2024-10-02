@@ -1,5 +1,5 @@
 <template>
-  <el-card class="announce-card" shadow="never">
+  <el-card class="announce-card" shadow="hover">
     <div class="header">
       <VerticalBar text="通知公告" />
     </div>
@@ -7,7 +7,7 @@
       通知内容
     </div>
   </el-card>
-  <el-card class="time-card" shadow="never">
+  <el-card class="time-card" shadow="hover">
     <div class="card-header">
       <VerticalBar text="时间列表" />
     </div>
@@ -114,7 +114,7 @@ generateCalendar();
     border-radius: 10px;
     background-color: #f9f9f9;
     width: 100%;
-    height: 100%;
+    height: 340px;
     //border: 1px solid black;
 
     .calendar-header {
@@ -159,12 +159,12 @@ generateCalendar();
         grid-gap: 5px;
 
         .calendar-date {
-          padding: 10px;
+          padding: 9px;
           background-color: #eee;
           text-align: center;
           border-radius: 5px;
           cursor: pointer;
-          border: 1px solid #888282;
+          //border: 1px solid #888282;
         }
 
         .calendar-date.highlight {
