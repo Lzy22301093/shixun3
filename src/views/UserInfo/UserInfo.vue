@@ -17,20 +17,36 @@
           </el-row>
 
           <el-divider></el-divider>
+<!--          <hr style="height:1px; border-width:0; background-color:#dadde4; margin:20px auto">-->
 
           <el-row>
             <el-col :span="12">
-              <el-descriptions class="info" title="基本信息" :column="1">
-                <el-descriptions-item label="姓名" style="background-color: rgb(228, 147, 187, 0.5)">{{ personalInfo.name }}</el-descriptions-item>
-                <el-descriptions-item class="info-item" label="年龄">{{ personalInfo.age }}</el-descriptions-item>
-                <el-descriptions-item class="info-item" label="邮箱">{{ personalInfo.email }}</el-descriptions-item>
-              </el-descriptions>
-            </el-col>
-            <el-col :span="12">
-              <el-descriptions title="其他信息" :column="1">
-                <el-descriptions-item label="职业">{{ personalInfo.job }}</el-descriptions-item>
-                <el-descriptions-item label="地址">{{ personalInfo.address }}</el-descriptions-item>
-              </el-descriptions>
+              <table>
+                <tr class="info-row">
+                  <th class="info-left">姓名</th>
+                  <td>{{ personalInfo.name }}</td>
+                </tr>
+                <tr class="info-row">
+                  <th class="info-left">性别</th>
+                  <td>{{ personalInfo.gender }}</td>
+                </tr>
+                <tr class="info-row">
+                  <th class="info-left">学号</th>
+                  <td>{{ personalInfo.studentId }}</td>
+                </tr>
+                <tr class="info-row">
+                  <th class="info-left">学院</th>
+                  <td>{{ personalInfo.academy }}</td>
+                </tr>
+                <tr class="info-row">
+                  <th class="info-left">班级</th>
+                  <td>{{ personalInfo.class }}</td>
+                </tr>
+                <tr class="info-row">
+                  <th class="info-left">邮件</th>
+                  <td>{{ personalInfo.email }}</td>
+                </tr>
+              </table>
             </el-col>
           </el-row>
         </el-card>
@@ -44,10 +60,11 @@ import { reactive } from 'vue'
 
 const personalInfo = reactive({
   name: '张三',
-  age: 30,
-  email: 'zhangsan@example.com',
-  job: '软件工程师',
-  address: '北京市海淀区'
+  gender: '男',
+  studentId: '22300000',
+  academy: '软件学院',
+  class: '软件2000',
+  email: 'zhangsan@example.com'
 })
 
 const editInfo = () => {
@@ -87,10 +104,17 @@ const editInfo = () => {
     font-size: 16px;
   }
   .info{
-    background-color: rgba(255, 255, 255, 0.8);
-    #info-item {
-      background-color: rgba(255, 255, 255, 0.8); // 半透明白色背景
+    background-color: rgba(222, 152, 209, 0);
+    .info-item {
+      background-color: rgba(255, 255, 255, 0); // 半透明白色背景
     }
+  }
+  .info-row{
+    height: 40px;
+  }
+  .info-left{
+    width: 100px;
+    //border: 1px solid #de98d1;
   }
 }
 </style>
