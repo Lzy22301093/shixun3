@@ -6,7 +6,7 @@ import RightPart from "./RightPart.vue";
 </script>
 
 <template>
-  <el-main class="main">
+  <el-main class="h-main">
     <el-row :gutter="20">
       <el-col :span="6">
         <div class="left-panel">
@@ -28,9 +28,10 @@ import RightPart from "./RightPart.vue";
 </template>
 
 <style lang="scss" scoped>
-.main {
+.h-main {
   //border: 2px solid darkslategrey;
-  margin-left: 50px;
-  margin-right: 50px
+  //margin-left: 50px;
+  //margin-right: 50px;
+  margin: 20px 70px 20px 70px;
 }
 </style>

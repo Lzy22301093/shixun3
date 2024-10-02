@@ -29,6 +29,7 @@ const routes = [
         name: 'Home',
         component: Home,
         redirect: '/home',
+        meta: { title: '唐朝例子的课程' },
         children: [
             {
                 path: 'home', name: 'HomeItems', component: HomeItems,
@@ -46,6 +47,7 @@ const routes = [
             return `/course/courseId=${to.params.id}&courseNumber=${to.params.courseNumber}/courseIntro`;
         },
         props: true, // 是为了传上面的path: '/course/:id'的id
+        meta: { title: '课程内容' },
         children: [
             {
                 path: 'courseIntro', name: 'CourseIntro', component: CourseIntro,
