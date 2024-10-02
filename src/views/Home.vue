@@ -1,23 +1,25 @@
 <template>
-  <el-container>
-    <el-header id="head" height="80px">
-      <h1 id="title" @click="goToPlatform" style="cursor: pointer;">唐朝例子课程平台</h1>
-      <div class="header-right">
-        <!-- 头像和姓名 -->
-        <div class="user-info">
-          <el-avatar src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
-          <span class="username">张三</span>
+  <div class="whole">
+    <el-container>
+      <el-header id="head" height="80px">
+        <h1 id="title" @click="goToPlatform" style="cursor: pointer;">唐朝例子课程平台</h1>
+        <div class="header-right">
+          <!-- 头像和姓名 -->
+          <div class="user-info">
+            <el-avatar src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
+            <span class="username">张三</span>
+          </div>
+          <!-- 个人中心 -->
+          <el-link @click="goToProfile" style="color: #865425">个人中心</el-link>
+          <!-- 安全退出 -->
+          <el-link @click="logout" style="color: #fc0303">安全退出</el-link>
         </div>
-        <!-- 个人中心 -->
-        <el-link @click="goToProfile" style="color: #865425">个人中心</el-link>
-        <!-- 安全退出 -->
-        <el-link type="danger" @click="logout">安全退出</el-link>
-      </div>
-    </el-header>
-    <el-main class="main">
-      <router-view/>
-    </el-main>
-  </el-container>
+      </el-header>
+      <el-main class="main">
+        <router-view/>
+      </el-main>
+    </el-container>
+  </div>
 </template>
 
 <script setup>
@@ -37,13 +39,19 @@ const goToPlatform = () => {
 
 // 点击安全退出
 const logout = () => {
+  router.push('/login');
   console.log("已安全退出");
 };
 </script>
 
 <style lang="scss" scoped>
+.whole{}
+
 #head {
-  background-color: rgb(205, 194, 255);;
+  background-image: url("../assets/bg1.jpg");
+  background-size: cover;
+  background-position: center;
+  background-color: rgb(107, 192, 236);
   margin-left: 0;
   display: flex;
   justify-content: space-between;
@@ -73,27 +81,14 @@ const logout = () => {
   }
 }
 .main {
+  height: calc(100vh - 80px);
   //border: 2px solid darkslategrey;
-  padding: 0;
+  padding: 0;// el-main中自带padding: 20
   //margin-left: 50px;
   //margin-right: 50px
-}
-
-.left-panel {
-  background-color: #f4dbed;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.center-panel {
-  background-color: #f4dbed;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.right-panel {
-  background-color: #f4dbed;
-  padding: 10px;
-  border-radius: 8px;
+  background-image: url("../assets/bg3.jpg");
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 0;
 }
 </style>

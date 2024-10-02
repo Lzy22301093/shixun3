@@ -21,10 +21,11 @@ import VerticalBar from "../../components/VerticalBar.vue";
            style="margin-top: 10px; font-size: 20px">
         张三
       </div>
-      <div class="identity"
+<!--      <div class="identity"
            style="margin-top: 10px; background-color: bisque; font-size: 20px">
         学生
-      </div>
+      </div>-->
+      <el-tag type="warning" size="large" style="font-size: 20px; margin-top: 5px">学生</el-tag>
 
     </div>
     <div class="userCard-down">
@@ -45,46 +46,45 @@ import VerticalBar from "../../components/VerticalBar.vue";
   </el-card>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .userCard{
-  background-color: #fff8fb;
-}
-.userCard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  //height: 40px;
-  //padding: 15px;
-  //border: 2px solid black;
-  .left, .right {
+  background-color: #fcdfe9;
+
+  .userCard-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
+    margin-bottom: 15px;
+    //height: 40px;
+    //padding: 15px;
+    //border: 2px solid black;
+    .left, .right {
+      display: flex;
+      align-items: center;
+    }
   }
-}
-.userCard-mid {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 180px;
-  //border: 2px solid black;
-}
-.userCard-down {
-  margin-top: 20px;
-  //display: flex;
-  //flex-direction: column;
-  //align-items: center;
-  height: 150px;
-  //border: 2px solid black;
-  font-size: 18px;
-  color: #989898;
+  .userCard-mid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 180px;
+    //border: 2px solid black;
+  }
+  .userCard-down {
+    margin-top: 20px;
+    //display: flex;
+    //flex-direction: column;
+    //align-items: center;
+    height: 150px;
+    //border: 2px solid black;
+    font-size: 18px;
+    color: #989898;
+  }
 }
 
 .announceRemind {
-  background-color: #fff8fb;
+  background-color: #fcdfe9;
   margin-top: 20px;
-  .announceContent{
-
-  }
+  .announceContent{}
 }
 </style>

@@ -112,9 +112,9 @@ const handleSemesterChange = (value) => {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .course-container {
-  background-color: #fff8fb;
+  background-color: rgba(252, 223, 233, 0.8);
 
   .header {
     display: flex;
@@ -134,7 +134,7 @@ const handleSemesterChange = (value) => {
     .course-card {
       display: flex;
       flex-direction: column;
-      background-color: #f6e4ef;
+      background-color: #f5cbdd;
       //justify-content: space-between;
       height: 250px;
       margin-bottom: 10px;

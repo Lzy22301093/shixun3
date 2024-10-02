@@ -1,5 +1,4 @@
 <script setup>
-
 import UserInfo from "./UserCard.vue";
 import CourseList from "./CourseList.vue";
 import RightPart from "./RightPart.vue";

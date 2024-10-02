@@ -208,6 +208,7 @@ const handleLogin = async () => {
 .login-page {
   height: 100vh;
   background-color: #c48db0;
+  background-image: url("../assets/bg1.jpg");
   background-size: cover;
   background-position: center;
   display: flex;
@@ -222,7 +223,7 @@ const handleLogin = async () => {
 
 .login-form {
   padding: 20px;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(241, 167, 214, 0.6);
   border-radius: 15px;
 }
 

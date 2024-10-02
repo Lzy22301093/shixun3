@@ -22,7 +22,7 @@
         </el-col>
       </el-row>
     </el-header>
-    <el-container class="layout-container" style="margin-top: 20px">
+    <el-container class="layout-container">
       <el-aside width="250px">
         <el-menu
             active-text-color="#00050f"
@@ -132,6 +132,9 @@ const courseNumber = ref(route.params.courseNumber);
 
 <style lang="scss" scoped>
 #head {
+  background-image: url("../assets/bg1.jpg");
+  background-size: cover;
+  background-position: center;
   height: 80px;
   background-color: rgb(205, 194, 255);
   color: white;
@@ -169,10 +172,13 @@ const courseNumber = ref(route.params.courseNumber);
 }
 
 .layout-container{
-  height: calc(100vh - 100px);
-  padding-bottom: 20px;
+  height: calc(100vh - 80px);
+  padding: 20px 0;
+  background-image: url("../assets/bg3.jpg");
+  background-size: cover;
+  background-position: center;
   .el-aside{
-    background-color: #de98d1;
+    background-color: rgba(222, 152, 209, 0.7);
     border-radius: 5px;
     .el-menu-item{
       background-color: #efb1e4;
@@ -183,7 +189,7 @@ const courseNumber = ref(route.params.courseNumber);
     margin: 0 20px;
     padding: 0;
     border-radius: 5px;
-    background-color: #e5c8dd;
+    background-color: rgba(229, 200, 221, 0.6);
     //border: 1px solid darkslategrey;
   }
 }

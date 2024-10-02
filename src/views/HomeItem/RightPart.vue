@@ -101,20 +101,21 @@ generateCalendar();
 
 <style lang="scss" scoped>
 .announce-card{
-  background-color: #fff8fb;
+  background-color: rgba(252, 223, 233, 0.7);
   height: 300px;
 }
 .time-card{
   margin-top: 20px;
-  background-color: #fff8fb;
+  background-color: rgba(252, 223, 233, 0.7);
   //border: 1px solid black;
 
   .calendar-container {
     margin-top: 10px;
+    padding-bottom: 2px;
     border-radius: 10px;
-    background-color: #f9f9f9;
+    background-color: rgba(249, 249, 249, 0.7);
     width: 100%;
-    height: 340px;
+    min-height: 340px;
     //border: 1px solid black;
 
     .calendar-header {

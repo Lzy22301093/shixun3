@@ -21,9 +21,9 @@
           <el-row>
             <el-col :span="12">
               <el-descriptions class="info" title="基本信息" :column="1">
-                <el-descriptions-item class="info" label="姓名">{{ personalInfo.name }}</el-descriptions-item>
-                <el-descriptions-item class="info" label="年龄">{{ personalInfo.age }}</el-descriptions-item>
-                <el-descriptions-item class="info" label="邮箱">{{ personalInfo.email }}</el-descriptions-item>
+                <el-descriptions-item label="姓名" style="background-color: rgb(228, 147, 187, 0.5)">{{ personalInfo.name }}</el-descriptions-item>
+                <el-descriptions-item class="info-item" label="年龄">{{ personalInfo.age }}</el-descriptions-item>
+                <el-descriptions-item class="info-item" label="邮箱">{{ personalInfo.email }}</el-descriptions-item>
               </el-descriptions>
             </el-col>
             <el-col :span="12">
@@ -61,19 +61,20 @@ const editInfo = () => {
   margin: 0;
   width: 100vw; /* 使背景图覆盖整个页面宽度 */
   height: calc(100vh - 80px); /* 使背景图覆盖整个页面高度 */
-  background-image: url('../../assets/bg2.jpg');
-  background-size: cover; /* 使背景图适应容器大小 */
+  background-image: url('../../assets/bg3.jpg');
+  background-size: cover;
+  background-position: center;
   //display: flex; /* 使用 flex 布局 */
   //justify-content: center; /* 水平居中内容 */
   //align-items: center; /* 垂直居中内容 */
 }
 
 .info-card {
-  border: 1px solid #c1ecec;
+  border: 1px solid #de98d1;
   width: 600px;
   //margin: 10px auto;
   min-height: 700px;
-  background-color: rgba(55, 73, 129, 0.5);
+  background-color: rgb(228, 147, 187, 0.5);
 
   .avatar{
     display: flex;
@@ -86,7 +87,10 @@ const editInfo = () => {
     font-size: 16px;
   }
   .info{
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.8);
+    #info-item {
+      background-color: rgba(255, 255, 255, 0.8); // 半透明白色背景
+    }
   }
 }
 </style>
