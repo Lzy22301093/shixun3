@@ -119,11 +119,11 @@ const handleSemesterChange = (value) => {
   .header {
     display: flex;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
 
   .select-semester {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
   }
 
   .course-list{

@@ -167,7 +167,7 @@ import { Lock, User } from '@element-plus/icons-vue';
 import { ElMessage } from "element-plus";
 // import router from "../router/index.js"; // 用这个导入router不能初始化loginPage组件，从而无法加载，原因：循环依赖问题（见笔记）
 import { useRouter } from "vue-router";
-import {useUserStore} from "../stores/user.js";
+import {useUserStore} from "@/stores/user.js";
 
 const form = ref()
 const loginFormModel = ref({
@@ -193,12 +193,13 @@ const rules = {
 };
 
 // 登录处理函数
-// const userStore = useUserStore() // 用户仓库
+const userStore = useUserStore() // 用户仓库
 const router = useRouter()
 const handleLogin = async () => {
   await form.value.validate()// 点击登录后等待再一次校验完成
   // const res = await userLoginService(formModel.value) // 发送登录表单内容
   // userStore.setToken(res.data.token) // 接收后端的token来设置当前用户的token
+  userStore.setToken(loginFormModel.value.userid) // 暂时代替
   ElMessage.success('登录成功')
   await router.push('/')
 };

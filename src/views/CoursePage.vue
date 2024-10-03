@@ -181,7 +181,7 @@ const courseNumber = ref(route.params.courseNumber);
     background-color: rgba(222, 152, 209, 0.7);
     border-radius: 5px;
     .el-menu-item{
-      background-color: #efb1e4;
+      background-color: rgba(239, 177, 228, 0.5);
     }
   }
 

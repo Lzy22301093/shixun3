@@ -113,7 +113,7 @@ generateCalendar();
     margin-top: 10px;
     padding-bottom: 2px;
     border-radius: 10px;
-    background-color: rgba(249, 249, 249, 0.7);
+    background-color: rgba(249, 249, 249, 0.5);
     width: 100%;
     min-height: 340px;
     //border: 1px solid black;
@@ -147,7 +147,7 @@ generateCalendar();
       }
       .week-day {
         padding: 5px;
-        background-color: #5579bc;
+        background-color: rgba(85, 121, 188, 0.8);
         color: white;
         border-radius: 5px;
         //border: 1px solid black;
@@ -161,7 +161,7 @@ generateCalendar();
 
         .calendar-date {
           padding: 9px;
-          background-color: #eee;
+          //background-color: rgba(238, 238, 238, 0);
           text-align: center;
           border-radius: 5px;
           cursor: pointer;

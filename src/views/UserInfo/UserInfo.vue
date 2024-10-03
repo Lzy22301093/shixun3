@@ -22,6 +22,7 @@
           <el-row>
             <el-col :span="12">
               <table>
+                <tbody>
                 <tr class="info-row">
                   <th class="info-left">姓名</th>
                   <td>{{ personalInfo.name }}</td>
@@ -46,9 +47,11 @@
                   <th class="info-left">邮件</th>
                   <td>{{ personalInfo.email }}</td>
                 </tr>
+                </tbody>
               </table>
             </el-col>
           </el-row>
+          <el-row :span="12"></el-row>
         </el-card>
       </el-col>
     </el-row>

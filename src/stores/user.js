@@ -3,7 +3,8 @@ import { ref } from 'vue'
 // import { userGetInfoService } from '../../api/user'
 
 // 用户模块 token setToken removeToken
-export const useUserStore = defineStore('big-user', () => {
+export const useUserStore = defineStore(
+    'big-user', () => {
     const token = ref('')
     const setToken = (newToken) => {
       token.value = newToken

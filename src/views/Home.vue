@@ -24,6 +24,7 @@
 
 <script setup>
 import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user.js";
 
 const router = useRouter();
 
@@ -39,6 +40,8 @@ const goToPlatform = () => {
 
 // 点击安全退出
 const logout = () => {
+  const userStore = useUserStore()
+  userStore.removeToken()
   router.push('/login');
   console.log("已安全退出");
 };
