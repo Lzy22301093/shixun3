@@ -164,12 +164,17 @@ generateCalendar();
           //background-color: rgba(238, 238, 238, 0);
           text-align: center;
           border-radius: 5px;
+          transition: background-color 0.5s ease;
           cursor: pointer;
           //border: 1px solid #888282;
         }
+        .calendar-date:hover{
+          background-color: #6fc8ee;
+          //color: #00adea;
+        }
 
         .calendar-date.highlight {
-          background-color: #fff2d8; /* 高亮选中日期 */
+          background-color: #6fc8ee; /* 高亮选中日期 */
         }
 
         .calendar-date.today {
