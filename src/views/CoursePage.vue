@@ -150,7 +150,7 @@ const courseNumber = ref(route.params.courseNumber);
   }
   .relevant-info{
     //border: 1px solid black;
-    background-color: rgba(122,90,111,0.2);
+    background-color: rgba(122,90,111,0.4);
     margin-top: 10px;
     border-top-left-radius: 3px;
     border-top-right-radius: 3px;
