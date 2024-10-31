@@ -2,6 +2,7 @@ package com.icplatform.controller;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.FileUploadResponse;
 import com.icplatform.entity.Homework;
 import com.icplatform.service.CourseService;
@@ -10,15 +11,24 @@ import com.icplatform.service.CommitService;
 import com.icplatform.service.SCService;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -161,6 +171,39 @@ public class HomeworkController {
         return null;
     }
 
+    @GetMapping("downloads")
+    public ResponseEntity<Resource> downloadHomework(@RequestParam String cid, @RequestParam String sno, @RequestParam int workid){
+
+        if(cid != null && sno != null){
+            Homework homework = homeworkService.findByCidSnoAndWorkid(cid,sno,workid);
+            if(homework != null){
+                String homeworkPath = homework.getPath();
+                File file = new File(homeworkPath);
+                Resource resource = new FileSystemResource(file);
+
+                if (!resource.exists()) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .header("status","error")
+                            .build();
+                }
+
+                // 设置 Content-Disposition 响应头
+                String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
+                HttpHeaders headers = new HttpHeaders();
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+
+                // 返回文件资源及新的 token
+                return ResponseEntity.ok()
+                        .headers(headers)
+                        .contentLength(file.length())
+                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                        .header("status","success")
+                        .body(resource);
+            }
+        }
+        return null;
+    }
+
     //上传作业
     @PostMapping("upload")
     public FileUploadResponse uploadHomework(@RequestHeader Map<String, String> header, @RequestParam MultipartFile homework, @RequestParam String cid, @RequestParam String sno, @RequestParam int workid, @RequestParam String reviestatus) throws IOException {
@@ -274,6 +317,62 @@ public class HomeworkController {
         response.put("status","error");
         response.put("message","布置作业失败权限不足");
         return response;
+    }
+
+    //下载作业
+    @GetMapping("/generateDownloadLink")
+    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header, @RequestParam String homeworkName) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new DownloadLinkResponse("error", "无效的Token"));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 0 || userType == 1) {
+            String correctedFileName = null;
+
+            // 解码文件名
+            String decodedFname = null;
+            try {
+                decodedFname = URLDecoder.decode(homeworkName, StandardCharsets.UTF_8.name());
+                // 将空格替换回加号
+                correctedFileName = decodedFname.replace(" ", "+");
+                System.out.println(correctedFileName);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "文件名解码失败"));
+            }
+
+            System.out.println("解码后的文件名: " + correctedFileName);
+            String filePath = homeworkService.searchPathByHname(homeworkName);
+            System.out.println("文件路径: " + filePath);
+
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("error", "文件未找到"));
+            }
+
+            filePath = filePath.replace("\\", "/");
+
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "无法获取IP地址"));
+            }
+
+            String downloadUrl = "http://" + ipAddress + ":8080/api/assets/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType,username);
+
+            return ResponseEntity.ok(new DownloadLinkResponse("success", downloadUrl,newToken));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("error", "用户权限不足"));
     }
 
 }

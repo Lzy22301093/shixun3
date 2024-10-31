@@ -93,4 +93,8 @@ public class HomeworkService {
         homework.setReviestatus(reviestatus);
         homeworkRepositories.save(homework);
     }
+
+    public String searchPathByHname(String hname) {
+        return homeworkRepositories.findByHname(hname).getPath();
+    }
 }

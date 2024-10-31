@@ -243,59 +243,28 @@ public class AssetsController {
 
     //下载资源
     @GetMapping("/download")
-    public ResponseEntity<Resource> downloadFile(@RequestHeader Map<String, String> header, @RequestParam String filePath) {
-        System.out.println(filePath);
+    public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
+        File file = new File(filePath);
+        Resource resource = new FileSystemResource(file);
 
-        // 从请求头中获取 token
-        String token = header.get("token");
-        DecodedJWT decodedJWT;
-
-        try {
-            decodedJWT = JWTUtil.verifyToken(token);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        if (!resource.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .header("status","error")
                     .build();
         }
 
-        // 获取用户信息
-        String username = decodedJWT.getClaim("username").asString();
-        int userType = decodedJWT.getClaim("usertype").asInt();
+        // 设置 Content-Disposition 响应头
+        String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
-        // 检查用户权限
-        if (userType == 0 || userType == 1) {
-            File file = new File(filePath);
-            Resource resource = new FileSystemResource(file);
-
-            if (!resource.exists()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .header("status","error")
-                        .build();
-            }
-
-            // 设置 Content-Disposition 响应头
-            String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
-
-            // 生成新的 token
-            String newToken = JWTUtil.generateToken(userType, username); // 请确保这个方法存在并适合你的业务逻辑
-
-            // 返回文件资源及新的 token
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .contentLength(file.length())
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .header("newToken", newToken)
-                    .header("status","success")
-                    .body(resource);
-        }
-
-        // 用户权限不足
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .header("newToken", null)
-                .header("status","error")
-                .build();
+        // 返回文件资源及新的 token
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(file.length())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header("status","success")
+                .body(resource);
     }
 
     //生成资源下载链接
@@ -307,7 +276,7 @@ public class AssetsController {
         try {
             decodedJWT = JWTUtil.verifyToken(token);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new DownloadLinkResponse("error", "无效的Token"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new DownloadLinkResponse("", "error"));
         }
 
         String username = decodedJWT.getClaim("username").asString();
@@ -325,7 +294,7 @@ public class AssetsController {
                 System.out.println(correctedFileName);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "文件名解码失败"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
             }
 
             System.out.println("解码后的文件名: " + correctedFileName);
@@ -333,7 +302,7 @@ public class AssetsController {
             System.out.println("文件路径: " + filePath);
 
             if (filePath == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("error", "文件未找到"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("", "error"));
             }
 
             filePath = filePath.replace("\\", "/");
@@ -348,10 +317,10 @@ public class AssetsController {
             String downloadUrl = "http://" + ipAddress + ":8080/api/assets/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType,username);
 
-            return ResponseEntity.ok(new DownloadLinkResponse("success", downloadUrl,newToken));
+            return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl,"success" ,newToken));
         }
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("error", "用户权限不足"));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));
     }
 
 

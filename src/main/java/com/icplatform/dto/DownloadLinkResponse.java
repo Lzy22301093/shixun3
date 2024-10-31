@@ -8,7 +8,6 @@ public class DownloadLinkResponse {
     public DownloadLinkResponse(String downloadLink,String status) {
         this.downloadLink = downloadLink;
         this.status = status;
-        this.token = token;
     }
 
     public DownloadLinkResponse(String downloadLink,String status,String token) {
