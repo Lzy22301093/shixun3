@@ -35,18 +35,18 @@ public class CourseController {
     private TeacherService teacherService;
 
     @Autowired
-    private HomeworkService homeworkService;
+    private TeachingService teachingService;
 
 
 
     @PostMapping("")
-    public Map<String, Object> courseList(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> sno) {
+    public Map<String, Object> courseList(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> numberData) {
 
         String token = header.get("token");
         DecodedJWT decodedJWT;
         try {
             decodedJWT = JWTUtil.verifyToken(token);
-        }catch (Exception e){
+        } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("message", "token超时");
             response.put("status", "error");
@@ -55,51 +55,79 @@ public class CourseController {
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        String sno_a = sno.get("sno");
-        System.out.println(sno_a);
+        String sno = numberData.get("username"); // 学生学号
+        String tno = numberData.get("username"); // 教师工号（可能是同一字段）
 
-        if(userType == 0){
-            List<SC> scList = scService.searchBySno(sno_a);
-            if(!scList.isEmpty()){
+        if (userType == 0) {
+            List<SC> scList = scService.searchBySno(sno);
+            if (!scList.isEmpty()) {
+                List<Map<String, Object>> courseList = new ArrayList<>();
 
-                List<Map<String,Object>> courseList = new ArrayList<>();
-
-                for(SC sc : scList){
+                for (SC sc : scList) {
                     String cid = sc.getCid();
                     String cno = sc.getCno();
-                    Course course = courseService.findByCidAndCno(cid,cno);
-                    if(course != null){
-                        Map<String ,Object> response = new HashMap<>();
-                        response.put("cid",cid);
-                        response.put("cno",cno);
-                        response.put("cname",course.getCname());
+                    Course course = courseService.findByCidAndCno(cid, cno);
+                    if (course != null) {
+                        Map<String, Object> response = new HashMap<>();
+                        response.put("cid", cid);
+                        response.put("cno", cno);
+                        response.put("cname", course.getCname());
 
                         courseList.add(response);
                     }
                 }
 
-                String newToken = JWTUtil.generateToken(userType,username);
+                String newToken = JWTUtil.generateToken(userType, username);
 
                 // 返回结果列表
                 Map<String, Object> result = new HashMap<>();
                 result.put("courseList", courseList);
                 result.put("newToken", newToken);
-                result.put("status","success");
+                result.put("status", "success");
                 return result;
-            }else{
+
+            } else {
                 // 没有找到任何 SC 记录
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("message", "学生本学期无选课信息");
-                errorResponse.put("status","error");
+                errorResponse.put("status", "error");
                 return errorResponse;
             }
-        }else{
+
+        } else if (userType == 1) {
+            // 处理教师的情况
+            List<String> cidList = teachingService.searchCidByTno(tno); // 查询 teaching 表获取所有 cid
+            List<Map<String, Object>> courseList = new ArrayList<>();
+
+            for (String cid : cidList) {
+                Course course = courseService.findByCid(cid); // 根据 cid 查询 course 表
+                if (course != null) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("cid", cid);
+                    response.put("cno", course.getCno());
+                    response.put("cname", course.getCname());
+
+                    courseList.add(response);
+                }
+            }
+
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            // 返回结果列表
+            Map<String, Object> result = new HashMap<>();
+            result.put("courseList", courseList);
+            result.put("newToken", newToken);
+            result.put("status", "success");
+            return result; // 添加了返回语句
+
+        } else {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("message", "用户类型错误");
-            errorResponse.put("status","error");
+            errorResponse.put("status", "error");
             return errorResponse;
         }
     }
+
     //课程信息
     @PostMapping("/info")
     public Map<String,Object> CourseInformation(@RequestHeader Map<String,String> header,@RequestParam String cid,@RequestParam String cno){

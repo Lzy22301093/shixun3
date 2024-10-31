@@ -71,7 +71,6 @@ public class AssetsController {
             if (!courseDir.exists()) {
                 courseDir.mkdirs();
             }
-
             // 设置上传文件路径
             File uploadFile = new File(courseDir, originalFilename);
 
@@ -242,73 +241,13 @@ public class AssetsController {
         return normalized;
     }
 
-    // 下载资源
-/*    @GetMapping("/downloads")
-    public ResponseEntity<Resource> downloadFile(@RequestHeader Map<String,String> header,@RequestParam String filePath) {
-
-        String token = header.get("token");
-        DecodedJWT decodedJWT;
-        try {
-            decodedJWT = JWTUtil.verifyToken(token);
-        }catch (Exception e){
-            return null;
-        }
-        String username = decodedJWT.getClaim("username").asString();
-        int userType = decodedJWT.getClaim("usertype").asInt();
-
-        if(userType ==0 ){
-            System.out.println("收到下载请求，文件路径: " + filePath); // 输出接收到的文件路径
-
-            try {
-                File file = new File(filePath);
-
-                if (!file.exists()) {
-                    System.out.println("文件未找到: " + filePath); // 输出文件未找到的信息
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-                }
-
-                // 获取文件的MIME类型
-                String mimeType = Files.probeContentType(Paths.get(filePath));
-                Resource resource = new FileSystemResource(file);
-                System.out.println("准备返回文件: " + file.getName() + ", MIME类型: " + mimeType); // 输出准备返回的文件信息
-
-                // 如果无法确定MIME类型，则设置为默认类型
-                if (mimeType == null) {
-                    mimeType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
-                }
-
-                // 对文件名进行URL编码处理，防止非ASCII字符引发异常
-                String encodedFileName = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8.toString()).replace("+", "%20");
-
-                // 构建响应头
-                HttpHeaders headers = new HttpHeaders();
-                headers.add(HttpHeaders.CONTENT_TYPE, "attachment; filename*=UTF-8''" + encodedFileName);
-
-
-                // 返回文件作为下载资源
-                return ResponseEntity.ok()
-                        .headers(headers)
-                        .contentLength(file.length())
-                        .contentType(MediaType.parseMediaType(mimeType))
-                        .body(resource);
-
-            } catch (IOException e) {
-                // 如果发生错误，返回服务器内部错误状态
-                System.out.println("发生错误: " + e.getMessage()); // 输出错误信息
-                System.out.println(1);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-            }
-        }
-        return null;
-    }*/
-
     //下载资源
     @GetMapping("/download")
-    public ResponseEntity<Resource> downloadFile(@RequestHeader Map<String, String> headers, @RequestParam String filePath) {
+    public ResponseEntity<Resource> downloadFile(@RequestHeader Map<String, String> header, @RequestParam String filePath) {
         System.out.println(filePath);
 
         // 从请求头中获取 token
-        String token = headers.get("token");
+        String token = header.get("token");
         DecodedJWT decodedJWT;
 
         try {
@@ -324,7 +263,7 @@ public class AssetsController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         // 检查用户权限
-        if (userType == 0) { // 假设用户类型 0 有权限
+        if (userType == 0 || userType == 1) {
             File file = new File(filePath);
             Resource resource = new FileSystemResource(file);
 
@@ -336,15 +275,15 @@ public class AssetsController {
 
             // 设置 Content-Disposition 响应头
             String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
-            HttpHeaders header = new HttpHeaders();
-            header.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
 
             // 生成新的 token
             String newToken = JWTUtil.generateToken(userType, username); // 请确保这个方法存在并适合你的业务逻辑
 
             // 返回文件资源及新的 token
             return ResponseEntity.ok()
-                    .headers(header)
+                    .headers(headers)
                     .contentLength(file.length())
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header("newToken", newToken)
@@ -359,36 +298,10 @@ public class AssetsController {
                 .build();
     }
 
-
-
-/*    @GetMapping("/downloads")
-    public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
-
-        System.out.println(filePath);
-
-        File file = new File(filePath);
-        Resource resource = new FileSystemResource(file);
-
-        if (!resource.exists()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        // 设置 Content-Disposition 响应头
-        String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
-
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(file.length())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(resource);
-    }*/
-
     //生成资源下载链接
     @GetMapping("/generateDownloadLink")
-    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> headers, @RequestParam String fileName) {
-        String token = headers.get("token");
+    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header, @RequestParam String fileName) {
+        String token = header.get("token");
         DecodedJWT decodedJWT;
 
         try {
@@ -400,7 +313,7 @@ public class AssetsController {
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        if (userType == 0) {
+        if (userType == 0 || userType == 1) {
             String correctedFileName = null;
 
             // 解码文件名
@@ -439,6 +352,53 @@ public class AssetsController {
         }
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("error", "用户权限不足"));
+    }
+
+
+    //新建资源文件夹
+    @PostMapping("/folder/create")
+    public Map<String, String> creatingNewFolder(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> folderData) {//foldData中应当含有 folderPath
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("status","error");
+            response.put("message","token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if(userType == 1) {
+
+            String folderPath = folderData.get("folderPath");
+
+            String courseResourcePath = folderPath;  // 使用正斜杠
+
+            System.out.println(courseResourcePath);
+
+            File courseDir = new File(courseResourcePath);
+
+            if (!courseDir.exists()) {
+                courseDir.mkdirs();
+            }
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("status","success");
+            response.put("message","创建文件夹成功");
+            response.put("newToken", newToken);
+            return response;
+        }else{
+            Map<String, String> response = new HashMap<>();
+            response.put("status","error");
+            response.put("message","新建文件夹失败");
+            return response;
+        }
     }
 
 }

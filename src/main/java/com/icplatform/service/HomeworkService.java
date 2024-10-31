@@ -13,7 +13,7 @@ import java.util.List;
 
 @Service
 public class HomeworkService {
-    private final HomeworkRepositories homeworkRepositories;
+    private HomeworkRepositories homeworkRepositories;
 
     public HomeworkService(HomeworkRepositories homeworkRepositories) {
         this.homeworkRepositories = homeworkRepositories;
@@ -63,7 +63,7 @@ public class HomeworkService {
     }
 
     //更新作业
-    public void updateHomeworkByHname(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time) {
+    public void updateHomeworkByHname(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time, String reviestatus) {
         Homework homework = homeworkRepositories.findByHname(hname);
         if (homework == null) {
             throw new IllegalArgumentException("资产未找到");
@@ -74,11 +74,12 @@ public class HomeworkService {
         homework.setWorkid(workid);
         homework.setCno(cno);
         homework.setStime(submit_time);
+        homework.setReviestatus(reviestatus);
         homeworkRepositories.save(homework);
     }
 
     //插入作业
-    public void insertNewHomework(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time) {
+    public void insertNewHomework(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time,LocalDateTime start, LocalDateTime end, String reviestatus) {
         Homework homework = new Homework();
         homework.setHname(hname);
         homework.setCid(cid);
@@ -87,6 +88,9 @@ public class HomeworkService {
         homework.setWorkid(workid);
         homework.setCno(cno);
         homework.setStime(submit_time);
+        homework.setStart(start);
+        homework.setEnd(end);
+        homework.setReviestatus(reviestatus);
         homeworkRepositories.save(homework);
     }
 }

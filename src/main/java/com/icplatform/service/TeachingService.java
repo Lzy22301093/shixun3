@@ -18,4 +18,8 @@ public class TeachingService {
     public Teaching searchByCid(String cid){
         return teachingRepositories.findById(cid).orElse(null);
     }
+
+    public List<String> searchCidByTno(String tno){
+        return teachingRepositories.findCidByTno(tno);
+    }
 }
