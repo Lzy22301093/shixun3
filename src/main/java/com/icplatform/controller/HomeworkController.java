@@ -131,47 +131,7 @@ public class HomeworkController {
     }
 
     //课程作业下载
-    @GetMapping("/download")
-    public ResponseEntity<Resource> downloadHomework(@RequestHeader Map<String,String> header, @RequestParam String cid, @RequestParam String sno, @RequestParam int workid) {//cid,sno,workid
-
-        String token = header.get("token");
-        DecodedJWT decodedJWT;
-        try {
-            decodedJWT = JWTUtil.verifyToken(token);
-        }catch (Exception e){
-            return null;
-        }
-        String username = decodedJWT.getClaim("username").asString();
-        int userType = decodedJWT.getClaim("usertype").asInt();
-
-        if(userType == 0){
-
-            System.out.println("收到下载请求，CID: " + cid + ", 学号: " + sno + ", 作业ID: " + workid); // 输出接收到的参数
-
-            if(cid != null && sno != null){
-                Homework homework = homeworkService.findByCidSnoAndWorkid(cid,sno,workid);
-
-                if(homework != null){
-                    String homeworkPath = homework.getPath();
-                    Resource resource = resourceLoader.getResource(homeworkPath);
-
-                    String newToken = JWTUtil.generateToken(userType, username);
-
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + homework.getHname());
-                    headers.add("newToken", newToken);
-                    headers.add("status", "success");
-
-                    return ResponseEntity.ok()
-                            .headers(headers)
-                            .body(resource);
-                }
-            }
-        }
-        return null;
-    }
-
-    @GetMapping("downloads")
+    @GetMapping("download")
     public ResponseEntity<Resource> downloadHomework(@RequestParam String cid, @RequestParam String sno, @RequestParam int workid){
 
         if(cid != null && sno != null){
@@ -270,7 +230,7 @@ public class HomeworkController {
 
     //布置作业
     @PostMapping("/assign")
-    public Map<String, String> assignHomework(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> assignData){
+    public Map<String, String> assignHomework(@RequestHeader Map<String, String> header, @RequestParam("homework") MultipartFile homework, @RequestParam("start") String start, @RequestParam("end") String end, @RequestParam("workid") int workid, @RequestParam("cid") String cid) throws IOException {
 
         String token = header.get("token");
         DecodedJWT decodedJWT;
@@ -279,45 +239,62 @@ public class HomeworkController {
         } catch (Exception e) {
             Map<String, String> response = new HashMap<>();
             response.put("status", "error");
-            response.put("message","token已被清除或已过期");
+            response.put("message", "token已被清除或已过期");
             return response;
         }
 
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        if(userType == 1){
+        if (userType == 1) {
+
+            System.out.println(start);
+            System.out.println(end);
 
             DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-            LocalDateTime start = LocalDateTime.parse(assignData.get("start"),df);
-            LocalDateTime end = LocalDateTime.parse(assignData.get("end"),df);
-            int workid = Integer.valueOf(assignData.get("workid"));
-            String cid = assignData.get("cid");
+            LocalDateTime startTime = LocalDateTime.parse(start, df);
+            LocalDateTime endTime = LocalDateTime.parse(end, df);
 
-            try{
-                //如果数据库中存在记录则更新
-                commitService.updateAssignHomework(start, end, workid,cid);
-                System.out.println("3");
-            }catch (IllegalArgumentException e){
-                //如果不存在记录则插入新的记录
-                commitService.InsertAssignHomework(start, end, workid,cid);
-                System.out.println("4");
+            // 保存文件到指定路径
+            String homeworkPath = "E:/ICPlatformStorage/AssignHomework/" + cid + "/" + workid;
+            File homeworkDir = new File(homeworkPath);
+
+            if (!homeworkDir.exists()) {
+                homeworkDir.mkdirs();
             }
 
-            String newToken = JWTUtil.generateToken(userType,username);
+            String originalFilename = homework.getOriginalFilename();
+            File savedHomework = new File(homeworkDir, originalFilename);
+
+            if (savedHomework.exists()) {
+                savedHomework.delete();
+            }
+
+            homework.transferTo(savedHomework);
+
+            // 将路径和文件名保存在数据库的commit表中
+            String filePath = savedHomework.getAbsolutePath().replace("\\", "/");
+            try {
+                commitService.updateAssignHomework(startTime, endTime, workid, cid, filePath, originalFilename);
+            } catch (IllegalArgumentException e) {
+                commitService.insertAssignHomework(startTime, endTime, workid, cid, filePath, originalFilename);
+            }
+
+            String newToken = JWTUtil.generateToken(userType, username);
 
             Map<String, String> response = new HashMap<>();
-            response.put("status","success");
-            response.put("message","布置作业成功");
-            response.put("newToken",newToken);
+            response.put("status", "success");
+            response.put("message", "布置作业成功");
+            response.put("newToken", newToken);
             return response;
         }
 
         Map<String, String> response = new HashMap<>();
-        response.put("status","error");
-        response.put("message","布置作业失败权限不足");
+        response.put("status", "error");
+        response.put("message", "布置作业失败，权限不足");
         return response;
     }
+
 
     //下载作业
     @GetMapping("/generateDownloadLink")
