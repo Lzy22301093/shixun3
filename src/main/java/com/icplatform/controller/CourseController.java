@@ -37,8 +37,6 @@ public class CourseController {
     @Autowired
     private TeachingService teachingService;
 
-
-
     @PostMapping("")
     public Map<String, Object> courseList(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> numberData) {
 
