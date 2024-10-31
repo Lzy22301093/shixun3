@@ -132,37 +132,31 @@ public class HomeworkController {
 
     //课程作业下载
     @GetMapping("download")
-    public ResponseEntity<Resource> downloadHomework(@RequestParam String cid, @RequestParam String sno, @RequestParam int workid){
+    public ResponseEntity<Resource> downloadHomework(@RequestParam String filePath){
 
-        if(cid != null && sno != null){
-            Homework homework = homeworkService.findByCidSnoAndWorkid(cid,sno,workid);
-            if(homework != null){
-                String homeworkPath = homework.getPath();
-                File file = new File(homeworkPath);
-                Resource resource = new FileSystemResource(file);
-
-                if (!resource.exists()) {
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                            .header("status","error")
-                            .build();
-                }
-
-                // 设置 Content-Disposition 响应头
-                String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
-                HttpHeaders headers = new HttpHeaders();
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
-
-                // 返回文件资源及新的 token
-                return ResponseEntity.ok()
-                        .headers(headers)
-                        .contentLength(file.length())
-                        .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                        .header("status","success")
-                        .body(resource);
-            }
+        File file = new File(filePath);
+        Resource resource = new FileSystemResource(file);
+        if (!resource.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header("status","error")
+                    .build();
         }
-        return null;
+
+        // 设置 Content-Disposition 响应头
+        String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+
+        // 返回文件资源及新的 token
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(file.length())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header("status","success")
+                .body(resource);
     }
+
+
 
     //上传作业
     @PostMapping("upload")
@@ -343,7 +337,7 @@ public class HomeworkController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "无法获取IP地址"));
             }
 
-            String downloadUrl = "http://" + ipAddress + ":8080/api/assets/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String downloadUrl = "http://" + ipAddress + ":8080/api/homework/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType,username);
 
             return ResponseEntity.ok(new DownloadLinkResponse("success", downloadUrl,newToken));
@@ -351,5 +345,4 @@ public class HomeworkController {
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("error", "用户权限不足"));
     }
-
 }
