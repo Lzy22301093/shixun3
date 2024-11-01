@@ -59,7 +59,7 @@ public class AssetsController {
 
         if (userType == 1) {
             String originalFilename = file.getOriginalFilename();
-            long fileSize = file.getSize();
+            byte[] fileSize = file.getBytes();
             String fileType = file.getContentType();
             Date currentTime = new Date(System.currentTimeMillis());
 

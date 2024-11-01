@@ -21,7 +21,7 @@ public class AssetsService {
     }
 
     // 更新资源信息
-    public void updateAssetByFname(String fname, String type, long size, String tpath, Date time,String cid) {
+    public void updateAssetByFname(String fname, String type, byte[] size, String tpath, Date time,String cid) {
         Assets assets = assetsRepositories.findByFname(fname);
         if (assets == null) {
             throw new IllegalArgumentException("资产未找到");
@@ -35,7 +35,7 @@ public class AssetsService {
     }
 
     // 插入资源信息
-    public void insertNewAsset(String fname, String type, long size, String tpath, Date time,String cid) {
+    public void insertNewAsset(String fname, String type, byte[] size, String tpath, Date time,String cid) {
         Assets assets = new Assets();
         assets.setFname(fname);
         assets.setType(type);

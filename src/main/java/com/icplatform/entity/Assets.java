@@ -14,7 +14,7 @@ public class Assets {
 
     private String fname;
     private String type;
-    private Long size;
+    private byte[] size;
     private String cid;
     private String tpath;
     private Date time;
@@ -28,9 +28,10 @@ public class Assets {
     public void setTpath(String tpath){this.tpath = tpath;}
     public void setFname(String fname){this.fname = fname;}
     public void setType(String type){this.type = type;}
-    public void setSize(Long size){this.size = size;}
+    public void setSize(byte[] size){this.size = size;}
     public void setTime(Date time){this.time = time;}
     public String getCid(){return this.cid;}
     public void setCid(String cid){this.cid = cid;}
+    public byte[] getSize(){return this.size;}
 
 }
