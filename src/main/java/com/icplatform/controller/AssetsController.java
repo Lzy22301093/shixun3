@@ -3,6 +3,7 @@ package com.icplatform.controller;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.DownloadResponse;
+import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Assets;
 import com.icplatform.service.AssetsService;
 import com.icplatform.utils.JWTUtil;
@@ -24,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.*;
@@ -99,7 +101,7 @@ public class AssetsController {
         }
     }
 
-
+    //返回文件目录结构
     @GetMapping("/catalogue")
     public Map<String, Object> getCatalogue(@RequestHeader Map<String, String> header, @RequestParam String path) {
         String token = header.get("token");
@@ -116,7 +118,7 @@ public class AssetsController {
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        if (userType == 0) {
+        if (userType == 0 || userType == 1) {
             // 标准化路径
             String normalizedPath = normalizePath(path);
 
@@ -367,6 +369,82 @@ public class AssetsController {
             response.put("status","error");
             response.put("message","新建文件夹失败");
             return response;
+        }
+    }
+
+    //预览文件
+    // 生成预览链接
+    @GetMapping("/preview")
+    public ResponseEntity<PreviewLinkResponse> generatePreviewLink(@RequestHeader Map<String, String> header, @RequestParam String fileName) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error"));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 0 || userType == 1) {
+            String correctedFileName = null;
+
+            // 解码文件名
+            try {
+                String decodedFname = URLDecoder.decode(fileName, StandardCharsets.UTF_8.name());
+                correctedFileName = decodedFname.replace(" ", "+");
+                System.out.println("解码后的文件名: " + correctedFileName);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error"));
+            }
+
+            String filePath = assetsService.searchTpathByFname(correctedFileName);
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error"));
+            }
+
+            filePath = filePath.replace("\\", "/");
+
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("error", "无法获取IP地址"));
+            }
+
+            // 生成预览链接，编码路径确保格式正确
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
+                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error"));
+    }
+
+    // 用于处理PDF预览请求的方法
+    @GetMapping("/preview/pdf")
+    public ResponseEntity<Resource> previewPdf(@RequestParam String filePath) {
+        try {
+            Path path = Paths.get(URLDecoder.decode(filePath, StandardCharsets.UTF_8.name()));
+            Resource fileResource = new UrlResource(path.toUri());
+
+            if (!fileResource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
+                    .body(fileResource);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

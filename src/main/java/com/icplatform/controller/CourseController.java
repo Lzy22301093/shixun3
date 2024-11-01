@@ -139,7 +139,7 @@ public class CourseController {
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        if (userType == 0) {
+        if (userType == 0 || userType == 1) {
             // 根据cid和cno查询课程信息
             Course course = courseService.findByCid(cid);
             if (course != null) {
