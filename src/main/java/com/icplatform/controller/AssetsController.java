@@ -5,7 +5,9 @@ import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.DownloadResponse;
 import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Assets;
+import com.icplatform.repositories.CatalogueRepositories;
 import com.icplatform.service.AssetsService;
+import com.icplatform.service.CatalogueService;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +26,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +46,9 @@ public class AssetsController {
 
     @Autowired
     private AssetsService assetsService;
+
+    @Autowired
+    private CatalogueService catalogueService;
 
     //上传资源并更新数据库
     @PostMapping("/upload")
@@ -196,12 +202,12 @@ public class AssetsController {
         rootNode.setPath(rootPath);
         directoryMap.put(rootPath, rootNode);
 
+        // 从数据库中的文件路径构建文件树
         for (String filePath : filePaths) {
             String normalizedFilePath = filePath.replace("\\", "/");
             String relativePath = normalizedFilePath.replaceFirst(rootPath.replace("\\", "/") + "/", "");
             String[] parts = relativePath.split("/");
 
-            // 从根节点开始构建路径
             FileNode currentNode = rootNode;
 
             for (int i = 0; i < parts.length; i++) {
@@ -209,7 +215,6 @@ public class AssetsController {
                 boolean isFile = (i == parts.length - 1);
                 String currentPath = currentNode.getPath() + "/" + part;
 
-                // 如果当前路径不存在，则创建新节点
                 FileNode nextNode = directoryMap.computeIfAbsent(currentPath, k -> {
                     FileNode node = new FileNode();
                     node.setLabel(part);
@@ -221,7 +226,6 @@ public class AssetsController {
                     return node;
                 });
 
-                // 将新节点添加到当前节点的子节点中
                 if (!currentNode.getChildren().contains(nextNode)) {
                     currentNode.getChildren().add(nextNode);
                 }
@@ -229,7 +233,43 @@ public class AssetsController {
             }
         }
 
+        // 从数据库中获取空文件夹并添加到文件树
+        addEmptyFoldersFromDB(rootPath, directoryMap);
+
         return new ArrayList<>(rootNode.getChildren());
+    }
+
+    // 从数据库中获取空文件夹并添加到文件结构
+    private void addEmptyFoldersFromDB(String rootPath, Map<String, FileNode> directoryMap) {
+        List<String> emptyFolderPaths = catalogueService.getEmptyFoldersByRootPath(rootPath); // 获取数据库中以 rootPath 开头的空文件夹路径
+
+        for (String folderPath : emptyFolderPaths) {
+            String normalizedFolderPath = folderPath.replace("\\", "/");
+
+            if (!directoryMap.containsKey(normalizedFolderPath)) {
+                String relativePath = normalizedFolderPath.replaceFirst(rootPath.replace("\\", "/") + "/", "");
+                String[] parts = relativePath.split("/");
+
+                FileNode currentNode = directoryMap.get(rootPath);
+                for (String part : parts) {
+                    String currentPath = currentNode.getPath() + "/" + part;
+
+                    FileNode nextNode = directoryMap.computeIfAbsent(currentPath, k -> {
+                        FileNode node = new FileNode();
+                        node.setLabel(part);
+                        node.setType("directory");
+                        node.setPath(currentPath);
+                        node.setChildren(new ArrayList<>());
+                        return node;
+                    });
+
+                    if (!currentNode.getChildren().contains(nextNode)) {
+                        currentNode.getChildren().add(nextNode);
+                    }
+                    currentNode = nextNode;
+                }
+            }
+        }
     }
 
     // 标准化路径
@@ -356,7 +396,12 @@ public class AssetsController {
 
             if (!courseDir.exists()) {
                 courseDir.mkdirs();
+
+                catalogueService.saveNewFolder(folderPath);
             }
+
+
+
             String newToken = JWTUtil.generateToken(userType, username);
 
             Map<String, String> response = new HashMap<>();

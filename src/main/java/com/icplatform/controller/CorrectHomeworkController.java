@@ -2,15 +2,21 @@ package com.icplatform.controller;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Homework;
 import com.icplatform.service.HomeworkService;
 import com.icplatform.service.TeachingService;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.InetAddress;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,36 +65,51 @@ public class CorrectHomeworkController {
     }
 
     @GetMapping("/sendHomework")
-    public ResponseEntity<Resource> sendHomework(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam int workid,@RequestParam String sno) {//前端发送cid,workid,sno
+    public ResponseEntity<PreviewLinkResponse> generateHomeworkPreviewLink(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam int workid, @RequestParam String sno) {
         String token = header.get("token");
         DecodedJWT decodedJWT;
+
         try {
             decodedJWT = JWTUtil.verifyToken(token);
-        }catch (Exception e){
-            return null;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error", ""));
         }
+
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        if(userType == 1){
+        if (userType == 1) {
+            // 获取文件资源路径
+            Homework homework = homeworkService.findByCidSnoAndWorkid(cid, sno, workid);
 
-            Resource file = homeworkService.getHomeworkFile(cid, workid, sno);
-
-            if (file != null) {
-
-                System.out.println(file.getFilename());
-
-                String newToken = JWTUtil.generateToken(userType,username);
-
-                return ResponseEntity.ok()
-                        .header("Content-Disposition", "attachment; filename=" + file.getFilename())
-                        .header("status","success")
-                        .header("newToken",newToken)
-                        .body(file);
+            String filePath = homework.getPath();
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error", ""));
             }
+
+            // 替换路径中的反斜杠
+            filePath = filePath.replace("\\", "/");
+
+            // 获取当前IP地址
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error", ""));
+            }
+
+            // 生成预览链接，编码文件路径
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
+                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
         }
-        return ResponseEntity.badRequest().body(null);
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error", ""));
     }
+
+
 
     //批改作业
     @PostMapping("/correctHomework")

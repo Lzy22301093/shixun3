@@ -17,6 +17,8 @@ public class Commit {
     private int workid;
     private String path;
     private String cname;
+    private String content;
+    private int fullmark;
 
     public Commit() {}
 
@@ -61,5 +63,17 @@ public class Commit {
     }
     public void setCname(String cname) {
         this.cname = cname;
+    }
+    public String getContent() {
+        return content;
+    }
+    public void setContent(String content) {
+        this.content = content;
+    }
+    public int getFullmark() {
+        return fullmark;
+    }
+    public void setFullmark(int fullmark) {
+        this.fullmark = fullmark;
     }
 }

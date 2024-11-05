@@ -2,6 +2,7 @@ package com.icplatform.controller;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Course;
 import com.icplatform.entity.Homework;
 import com.icplatform.entity.SC;
@@ -12,9 +13,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -199,6 +207,97 @@ public class CourseController {
         }
     }
 
+    //课程大纲
+    @GetMapping("/outline")
+    public ResponseEntity<PreviewLinkResponse> generateOutlineLink(@RequestHeader Map<String, String> header, @RequestParam String cid) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error", ""));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            // 获取文件资源路径
+            Course course = courseService.findByCid(cid);
+
+            String filePath = course.getOutline();
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error", ""));
+            }
+
+            // 替换路径中的反斜杠
+            filePath = filePath.replace("\\", "/");
+
+            // 获取当前IP地址
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error", ""));
+            }
+
+            // 生成预览链接，编码文件路径
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
+                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error", ""));
+    }
+
+    //课程大纲
+    @GetMapping("/calendar")
+    public ResponseEntity<PreviewLinkResponse> generateCalendarLink(@RequestHeader Map<String, String> header, @RequestParam String cid) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error", ""));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            // 获取文件资源路径
+            Course course = courseService.findByCid(cid);
+
+            String filePath = course.getCalendar();
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error", ""));
+            }
+
+            // 替换路径中的反斜杠
+            filePath = filePath.replace("\\", "/");
+
+            // 获取当前IP地址
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error", ""));
+            }
+
+            // 生成预览链接，编码文件路径
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
+                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error", ""));
+    }
 
 }
 

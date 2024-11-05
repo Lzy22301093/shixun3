@@ -19,6 +19,8 @@ public class Course {
     private String tno;
     private String major;
     private String description;
+    private String calendar;
+    private String outline;
 
     public Course(){}
 
@@ -34,5 +36,9 @@ public class Course {
     public void setMajor(String major) {this.major = major;}
     public String getDescription() {return description;}
     public void setDescription(String description) {this.description = description;}
+    public String getCalendar() {return calendar;}
+    public void setCalendar(String calendar) {this.calendar = calendar;}
+    public String getOutline() {return outline;}
+    public void setOutline(String outline) {this.outline = outline;}
 
 }
