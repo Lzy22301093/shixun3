@@ -5,7 +5,6 @@ import com.icplatform.entity.Teacher;
 import com.icplatform.service.StudentService;
 import com.icplatform.service.TeacherService;
 import com.icplatform.utils.JWTUtil;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

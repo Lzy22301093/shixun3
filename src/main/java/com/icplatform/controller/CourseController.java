@@ -2,27 +2,26 @@ package com.icplatform.controller;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.icplatform.dto.FileUploadResponse;
 import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Course;
-import com.icplatform.entity.Homework;
 import com.icplatform.entity.SC;
 import com.icplatform.entity.Teacher;
 import com.icplatform.service.*;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.UnsupportedEncodingException;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -297,6 +296,109 @@ public class CourseController {
         }
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error", ""));
+    }
+
+    //上传课程大纲并更新数据库
+    @PostMapping("/outline/upload")
+    public FileUploadResponse uploadOutline(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid) throws IOException {
+
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return new FileUploadResponse("error", "token已被清除或已过期");
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            String originalFilename = file.getOriginalFilename();
+
+            // 设置文件夹路径
+            String courseResourcePath = "E:/ICPlatformStorage/CourseOutline/" + cid;  // 使用正斜杠
+            File courseDir = new File(courseResourcePath);
+
+            // 如果文件夹不存在则创建
+            if (!courseDir.exists()) {
+                courseDir.mkdirs();
+            }
+            // 设置上传文件路径
+            File uploadFile = new File(courseDir, originalFilename);
+
+            // 如果文件已存在，删除旧文件
+            if (uploadFile.exists()) {
+                uploadFile.delete();
+            }
+
+            // 保存新文件
+            file.transferTo(uploadFile);
+
+            try {
+                courseService.updateOutlineByCid(uploadFile.getAbsolutePath().replace("\\", "/"), cid);
+            } catch (IllegalArgumentException e) {
+                return new FileUploadResponse("error", "课程不存在");
+            }
+
+            String newToken = JWTUtil.generateToken(userType, username);
+            return new FileUploadResponse("success", "上传成功",newToken);
+
+        } else {
+            return new FileUploadResponse("error", "用户权限不足");
+        }
+    }
+
+
+    //上传课程大纲并更新数据库
+    @PostMapping("/calendar/upload")
+    public FileUploadResponse uploadCalendar(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid) throws IOException {
+
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return new FileUploadResponse("error", "token已被清除或已过期");
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            String originalFilename = file.getOriginalFilename();
+
+            // 设置文件夹路径
+            String courseResourcePath = "E:/ICPlatformStorage/CourseCalendar/" + cid;  // 使用正斜杠
+            File courseDir = new File(courseResourcePath);
+
+            // 如果文件夹不存在则创建
+            if (!courseDir.exists()) {
+                courseDir.mkdirs();
+            }
+            // 设置上传文件路径
+            File uploadFile = new File(courseDir, originalFilename);
+
+            // 如果文件已存在，删除旧文件
+            if (uploadFile.exists()) {
+                uploadFile.delete();
+            }
+
+            // 保存新文件
+            file.transferTo(uploadFile);
+
+            try {
+                courseService.updateCalendarByCid(uploadFile.getAbsolutePath().replace("\\", "/"), cid);
+            } catch (IllegalArgumentException e) {
+                return new FileUploadResponse("error", "课程不存在");
+            }
+
+            String newToken = JWTUtil.generateToken(userType, username);
+            return new FileUploadResponse("success", "上传成功",newToken);
+
+        } else {
+            return new FileUploadResponse("error", "用户权限不足");
+        }
     }
 
 }

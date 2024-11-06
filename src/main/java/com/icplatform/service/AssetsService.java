@@ -24,7 +24,7 @@ public class AssetsService {
     public void updateAssetByFname(String fname, String type, byte[] size, String tpath, Date time,String cid) {
         Assets assets = assetsRepositories.findByFname(fname);
         if (assets == null) {
-            throw new IllegalArgumentException("资产未找到");
+            throw new IllegalArgumentException("资源不存在");
         }
         assets.setTpath(tpath);
         assets.setType(type);  // 更新文件类型

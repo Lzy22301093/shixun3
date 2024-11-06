@@ -2,10 +2,7 @@ package com.icplatform.controller;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.icplatform.dto.DownloadLinkResponse;
-import com.icplatform.dto.DownloadResponse;
 import com.icplatform.dto.PreviewLinkResponse;
-import com.icplatform.entity.Assets;
-import com.icplatform.repositories.CatalogueRepositories;
 import com.icplatform.service.AssetsService;
 import com.icplatform.service.CatalogueService;
 import com.icplatform.utils.JWTUtil;
@@ -33,8 +30,8 @@ import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.*;
 
-import com.icplatform.dto.FileUploadResponse; // 导入你的响应类
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import com.icplatform.dto.FileUploadResponse;
+
 
 @RestController
 @RequestMapping("/api/assets")
@@ -52,7 +49,7 @@ public class AssetsController {
 
     //上传资源并更新数据库
     @PostMapping("/upload")
-    public FileUploadResponse uploadFile(@RequestHeader Map<String, String> header, @RequestParam MultipartFile file, @RequestParam String cid) throws IOException {
+    public FileUploadResponse uploadFile(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid, @RequestParam("tpath") String tpath) throws IOException {
 
         String token = header.get("token");
         DecodedJWT decodedJWT;
@@ -71,8 +68,8 @@ public class AssetsController {
             String fileType = file.getContentType();
             Date currentTime = new Date(System.currentTimeMillis());
 
-            // 设置文件夹路径：E:/ICPlatformStorage/CourseResources/cid
-            String courseResourcePath = "E:/ICPlatformStorage/CourseResources/" + cid;  // 使用正斜杠
+            // 设置文件夹路径
+            String courseResourcePath = tpath;  // 使用正斜杠
             File courseDir = new File(courseResourcePath);
 
             // 如果文件夹不存在则创建
