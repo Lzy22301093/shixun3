@@ -21,7 +21,6 @@ import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -348,7 +347,6 @@ public class CourseController {
             return new FileUploadResponse("error", "用户权限不足");
         }
     }
-
 
     //上传课程大纲并更新数据库
     @PostMapping("/calendar/upload")

@@ -5,7 +5,6 @@ import com.icplatform.repositories.AssetsRepositories;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -56,4 +55,16 @@ public class AssetsService {
         return assetsRepositories.findByTpathStartingWith(normalizedPath + "%"); // 添加 % 以匹配所有后续文件
     }
 
+    public String deleteAssetByFname(String fname) {
+
+        Assets assets = assetsRepositories.findByFname(fname);
+        if(assets != null) {
+            assetsRepositories.delete(assets);
+            String result = "数据库记录删除成功";
+            return result;
+        }else{
+            String result = "数据库记录不存在";
+            return result;
+        }
+    }
 }

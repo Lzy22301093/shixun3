@@ -69,15 +69,17 @@ public class AssetsController {
             Date currentTime = new Date(System.currentTimeMillis());
 
             // 设置文件夹路径
-            String courseResourcePath = tpath;  // 使用正斜杠
+            String courseResourcePath = tpath;
             File courseDir = new File(courseResourcePath);
+           // File courseDir = new File(tpath).getParentFile();
+            System.out.println(courseDir.getAbsolutePath());
 
             // 如果文件夹不存在则创建
             if (!courseDir.exists()) {
                 courseDir.mkdirs();
             }
             // 设置上传文件路径
-            File uploadFile = new File(courseDir, originalFilename);
+            File uploadFile = new File(courseDir.getAbsolutePath());
 
             // 如果文件已存在，删除旧文件
             if (uploadFile.exists()) {
@@ -414,7 +416,6 @@ public class AssetsController {
         }
     }
 
-    //预览文件
     // 生成预览链接
     @GetMapping("/preview")
     public ResponseEntity<PreviewLinkResponse> generatePreviewLink(@RequestHeader Map<String, String> header, @RequestParam String fileName) {
@@ -488,6 +489,50 @@ public class AssetsController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    //删除资源
+    @PostMapping("/delete")
+    public Map<String, Object> AssetsDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> fileData) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status","error");
+            response.put("message","token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+
+            String fileName = fileData.get("fileName");
+            if(fileName != null) {
+                String tpath = assetsService.searchTpathByFname(fileName);
+                String message = assetsService.deleteAssetByFname(fileName);
+                File file = new File(tpath);
+                file.delete();
+
+                String newToken = JWTUtil.generateToken(userType, username);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("status","success");
+                response.put("message",message);
+                response.put("newToken", newToken);
+                return response;
+
+            }
+
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("status","error");
+        response.put("message","权限不足,删除失败");
+        return response;
     }
 
 }
