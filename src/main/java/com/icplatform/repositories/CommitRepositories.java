@@ -13,4 +13,6 @@ public interface CommitRepositories extends JpaRepository<Commit, Integer> {
 
     @Query("SELECT l FROM Commit l WHERE l.cid = :cid AND l.workid = :workid")
     Commit findByCidAndWorkId(@Param("cid") String cid, @Param("workid") int workid);
+
+    boolean existsByWorkidAndCid(int workid, String Cid);
 }

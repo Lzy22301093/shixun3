@@ -19,6 +19,8 @@ public class Commit {
     private String cname;
     private String content;
     private int fullmark;
+    private int publish;
+    private int publishscore;
 
     public Commit() {}
 
@@ -75,5 +77,17 @@ public class Commit {
     }
     public void setFullmark(int fullmark) {
         this.fullmark = fullmark;
+    }
+    public int getPublish() {
+        return publish;
+    }
+    public void setPublish(int publish) {
+        this.publish = publish;
+    }
+    public int getPublishscore() {
+        return publishscore;
+    }
+    public void setPublishscore(int publishscore) {
+        this.publishscore = publishscore;
     }
 }

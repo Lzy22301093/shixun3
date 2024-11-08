@@ -57,4 +57,9 @@ public class CommitService {
     public Commit save(Commit commit) {
         return commitRepositories.save(commit);
     }
+
+    public boolean checkWorkIdExist(int workid, String cid) {
+        return commitRepositories.existsByWorkidAndCid(workid, cid);
+    }
+
 }
