@@ -1,10 +1,12 @@
 package com.icplatform.controller;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.gson.Gson;
 import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.service.AssetsService;
 import com.icplatform.service.CatalogueService;
+import com.icplatform.utils.GsonUtil;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -69,7 +71,11 @@ public class AssetsController {
             Date currentTime = new Date(System.currentTimeMillis());
 
             // 设置文件夹路径
-            String courseResourcePath = tpath;
+            String courseResourcePath = tpath + '/' + originalFilename;
+
+            System.out.println(tpath);
+            System.out.println(courseResourcePath);
+
             File courseDir = new File(courseResourcePath);
            // File courseDir = new File(tpath).getParentFile();
             System.out.println(courseDir.getAbsolutePath());
@@ -364,7 +370,6 @@ public class AssetsController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));
     }
 
-
     //新建资源文件夹
     @PostMapping("/folder/create")
     public Map<String, String> creatingNewFolder(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> folderData) {//foldData中应当含有 folderPath
@@ -398,8 +403,6 @@ public class AssetsController {
 
                 catalogueService.saveNewFolder(folderPath);
             }
-
-
 
             String newToken = JWTUtil.generateToken(userType, username);
 
@@ -492,7 +495,7 @@ public class AssetsController {
     }
 
     //删除资源
-    @PostMapping("/delete")
+ /*   @PostMapping("/delete")
     public Map<String, Object> AssetsDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> fileData) {
         String token = header.get("token");
         DecodedJWT decodedJWT;
@@ -532,6 +535,56 @@ public class AssetsController {
         Map<String, Object> response = new HashMap<>();
         response.put("status","error");
         response.put("message","权限不足,删除失败");
+        return response;
+    }*/
+
+    //删除资源
+    @PostMapping("/delete")
+    public Map<String, Object> AssetsDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> fileData) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            // 使用 GsonUtil 从 JSON 转换为 List<String>
+            List<String> fileNames = GsonUtil.fromJson(fileData.get("fileName").toString(), List.class);
+
+            System.out.println(fileData);
+            System.out.println(fileNames);
+
+            if (fileNames != null && !fileNames.isEmpty()) {
+                // 假设删除所有传入的文件
+                for (String fileName : fileNames) {
+                    String tpath = assetsService.searchTpathByFname(fileName);
+                    String message = assetsService.deleteAssetByFname(fileName);
+                    File file = new File(tpath);
+                    file.delete();
+                }
+
+                String newToken = JWTUtil.generateToken(userType, username);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "success");
+                response.put("message", "文件删除成功");
+                response.put("newToken", newToken);
+                return response;
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "权限不足,删除失败");
         return response;
     }
 
