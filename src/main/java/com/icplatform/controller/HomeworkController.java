@@ -440,7 +440,7 @@ public class HomeworkController {
         try {
             decodedJWT = JWTUtil.verifyToken(token);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new DownloadLinkResponse("error", "无效的Token"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new DownloadLinkResponse("", "error"));
         }
 
         String username = decodedJWT.getClaim("username").asString();
@@ -458,7 +458,7 @@ public class HomeworkController {
                 System.out.println(correctedFileName);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "文件名解码失败"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
             }
 
             System.out.println("解码后的文件名: " + correctedFileName);
@@ -466,7 +466,7 @@ public class HomeworkController {
             System.out.println("文件路径: " + filePath);
 
             if (filePath == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("error", "文件未找到"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("", "error"));
             }
 
             filePath = filePath.replace("\\", "/");
@@ -475,7 +475,7 @@ public class HomeworkController {
             try {
                 ipAddress = InetAddress.getLocalHost().getHostAddress();
             } catch (UnknownHostException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "无法获取IP地址"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
             }
 
             String downloadUrl = "http://" + ipAddress + ":8080/api/homework/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
@@ -484,7 +484,7 @@ public class HomeworkController {
             return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl, "success",newToken));
         }
 
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("error", "用户权限不足"));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));
     }
 
     //老师查看布置作业的列表
@@ -525,7 +525,7 @@ public class HomeworkController {
                     commitinfo.put("cid", cid);
                     commitinfo.put("start", start);
                     commitinfo.put("end", end);
-                    commitinfo.put("workid", "第" + workid + "次作业");
+                    commitinfo.put("workid", workid);
                     homeworkList.add(commitinfo);
                 }
 

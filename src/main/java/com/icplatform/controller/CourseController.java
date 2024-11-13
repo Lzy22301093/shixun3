@@ -2,12 +2,15 @@ package com.icplatform.controller;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.gson.reflect.TypeToken;
 import com.icplatform.dto.FileUploadResponse;
 import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Course;
+import com.icplatform.entity.Notification;
 import com.icplatform.entity.SC;
 import com.icplatform.entity.Teacher;
 import com.icplatform.service.*;
+import com.icplatform.utils.GsonUtil;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
@@ -42,6 +46,9 @@ public class CourseController {
 
     @Autowired
     private TeachingService teachingService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @PostMapping("")
     public Map<String, Object> courseList(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> numberData) {
@@ -397,6 +404,108 @@ public class CourseController {
         } else {
             return new FileUploadResponse("error", "用户权限不足");
         }
+    }
+
+    //上传课程通知
+    @PostMapping("/notification/upload")
+    public Map<String, Object> uploadNotification(@RequestHeader Map<String, String> header,@RequestBody Map<String, String> notificationData) throws IOException {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            String name = notificationData.get("name");
+            String cid = notificationData.get("cid");
+            int nid = Integer.valueOf(notificationData.get("nid"));
+            String content = notificationData.get("content");
+
+            System.out.println(content);
+
+            try {
+                notificationService.updateNotification(name,cid,nid,content);
+            } catch (IllegalArgumentException e) {
+                notificationService.insertNotification(name,cid,nid,content);
+            }
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "课程通知上传成功");
+            response.put("newToken", newToken);
+            return response;
+        } else {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "上传失败,用户权限不足");
+            return response;
+        }
+    }
+
+    //删除课程通知
+    @PostMapping("/notification/delete")
+    public Map<String, Object> deleteNotification(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> deleteData) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+
+            // 使用 TypeToken 获取 List 类型
+            Type cidListType = new TypeToken<List<String>>() {}.getType();
+            Type nidListType = new TypeToken<List<Integer>>() {}.getType();
+
+            // 使用 GsonUtil 从 JSON 转换为 List<String>
+            List<String> cids = GsonUtil.fromJson(deleteData.get("cid").toString(), cidListType);
+            List<Integer> nids = GsonUtil.fromJson(deleteData.get("nid").toString(), nidListType);
+
+            System.out.println(nids.toString());
+            System.out.println(cids);
+
+            if (cids != null && nids != null && cids.size() == nids.size()) {
+                // 配对 cid 和 nid
+                for (int i = 0; i < cids.size(); i++) {
+                    String cid = cids.get(i);
+                    int nid = Integer.valueOf(nids.get(i));
+
+                    Notification notification = notificationService.searchByCidAndNid(cid, nid);
+
+                    if (notification != null) {
+                        notificationService.deleteNotification(cid, nid);
+                    }
+                }
+                String newToken = JWTUtil.generateToken(userType, username);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "success");
+                response.put("message", "课程通知删除成功");
+                response.put("newToken", newToken);
+                return response;
+            }
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "删除失败用户权限不足");
+        return response;
     }
 
 }

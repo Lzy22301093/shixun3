@@ -358,7 +358,7 @@ public class AssetsController {
             try {
                 ipAddress = InetAddress.getLocalHost().getHostAddress();
             } catch (UnknownHostException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("error", "无法获取IP地址"));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
             }
 
             String downloadUrl = "http://" + ipAddress + ":8080/api/assets/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
@@ -493,50 +493,6 @@ public class AssetsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    //删除资源
- /*   @PostMapping("/delete")
-    public Map<String, Object> AssetsDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> fileData) {
-        String token = header.get("token");
-        DecodedJWT decodedJWT;
-
-        try {
-            decodedJWT = JWTUtil.verifyToken(token);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("status","error");
-            response.put("message","token已被清除或已过期");
-            return response;
-        }
-
-        String username = decodedJWT.getClaim("username").asString();
-        int userType = decodedJWT.getClaim("usertype").asInt();
-
-        if (userType == 1) {
-
-            String fileName = fileData.get("fileName");
-            if(fileName != null) {
-                String tpath = assetsService.searchTpathByFname(fileName);
-                String message = assetsService.deleteAssetByFname(fileName);
-                File file = new File(tpath);
-                file.delete();
-
-                String newToken = JWTUtil.generateToken(userType, username);
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("status","success");
-                response.put("message",message);
-                response.put("newToken", newToken);
-                return response;
-
-            }
-
-        }
-        Map<String, Object> response = new HashMap<>();
-        response.put("status","error");
-        response.put("message","权限不足,删除失败");
-        return response;
-    }*/
 
     //删除资源
     @PostMapping("/delete")

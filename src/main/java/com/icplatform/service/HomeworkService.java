@@ -66,7 +66,7 @@ public class HomeworkService {
     public void updateHomeworkByHname(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time, String reviestatus) {
         Homework homework = homeworkRepositories.findByHname(hname);
         if (homework == null) {
-            throw new IllegalArgumentException("资产未找到");
+            throw new IllegalArgumentException("作业不存在");
         }
         homework.setCid(cid);
         homework.setSno(sno);
