@@ -141,7 +141,7 @@ public class CourseController {
 
     //课程信息
     @PostMapping("/info")
-    public Map<String,Object> CourseInformation(@RequestHeader Map<String,String> header,@RequestBody Map<String, String> infoData){
+    public Map<String,Object> CourseInformation(@RequestHeader Map<String,String> header,@RequestParam String cid,@RequestParam String cno){
         String token = header.get("token");
         DecodedJWT decodedJWT;
         try {
@@ -154,7 +154,6 @@ public class CourseController {
 
         if (userType == 0 || userType == 1) {
             // 根据cid和cno查询课程信息
-            String cid = infoData.get("cid");
             Course course = courseService.findByCid(cid);
             if (course != null) {
                 // 获取课程的tno
@@ -508,31 +507,6 @@ public class CourseController {
         response.put("message", "删除失败用户权限不足");
         return response;
     }
-
-   /* //上传视频
-    @PostMapping("/video/upload")
-    public Map<String, Object> uploadVideo(@RequestHeader Map<String, String> header,
-                                           @RequestParam("videoFile") MultipartFile videoFile,
-                                           @RequestParam("cid") String cid,
-                                           @RequestParam("vid") int vid) throws IOException {
-        String token = header.get("token");
-        DecodedJWT decodedJWT;
-        try {
-            decodedJWT = JWTUtil.verifyToken(token);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "error");
-            response.put("message", "token已被清除或已过期");
-            return response;
-        }
-
-        String username = decodedJWT.getClaim("username").asString();
-        int userType = decodedJWT.getClaim("usertype").asInt();
-
-        if (userType == 1) {
-
-        }
-    }*/
 
 }
 

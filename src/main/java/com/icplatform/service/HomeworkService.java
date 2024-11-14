@@ -64,18 +64,18 @@ public class HomeworkService {
 
     //更新作业
     public void updateHomeworkByHname(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time, String reviestatus) {
-        Homework homework = homeworkRepositories.findByCidAndSnoAndWorkid(cid,sno,workid);
+        Homework homework = homeworkRepositories.findByHname(hname);
         if (homework == null) {
             throw new IllegalArgumentException("作业不存在");
         }
-
-        homework.setHname(hname);
+        homework.setCid(cid);
+        homework.setSno(sno);
         homework.setPath(path);
+        homework.setWorkid(workid);
         homework.setCno(cno);
         homework.setStime(submit_time);
         homework.setReviestatus(reviestatus);
         homeworkRepositories.save(homework);
-
     }
 
     //插入作业

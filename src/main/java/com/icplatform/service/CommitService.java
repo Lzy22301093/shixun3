@@ -2,7 +2,6 @@ package com.icplatform.service;
 
 
 import com.icplatform.entity.Commit;
-import com.icplatform.entity.Homework;
 import com.icplatform.repositories.CommitRepositories;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +18,7 @@ public class CommitService {
     }
 
     //更新布置作业信息
-    public void updateAssignHomework(LocalDateTime start, LocalDateTime end, int workid, String cid, String path, String cname, String content, int fullmark, int publish, int publishScore){
+    public void updateAssignHomework(LocalDateTime start, LocalDateTime end, int workid, String cid, String path, String cname, String content, int fullmark){
         Commit commit = commitRepositories.findByCidAndWorkId(cid, workid);
 
         if(commit == null){
@@ -31,8 +30,6 @@ public class CommitService {
         commit.setPath(path);
         commit.setContent(content);
         commit.setFullmark(fullmark);
-        commit.setPublish(publish);
-        commit.setPublishscore(publishScore);
         commitRepositories.save(commit);
     }
 
@@ -46,7 +43,6 @@ public class CommitService {
         commit.setCname(cname);
         commit.setContent(content);
         commit.setFullmark(fullmark);
-        commitRepositories.save(commit);
         commitRepositories.save(commit);
     }
 
@@ -64,23 +60,6 @@ public class CommitService {
 
     public boolean checkWorkIdExist(int workid, String cid) {
         return commitRepositories.existsByWorkidAndCid(workid, cid);
-    }
-
-    public void updatePublish(int publish, String cid, int workid) {
-        Commit commit = commitRepositories.findByCidAndWorkId(cid, workid);
-
-        if(commit != null){
-            commit.setPublish(publish);
-            commitRepositories.save(commit);
-        }
-    }
-    public void updatePublishScore(int publishScore, String cid, int workid) {
-        Commit commit = commitRepositories.findByCidAndWorkId(cid, workid);
-
-        if(commit != null){
-            commit.setPublish(publishScore);
-            commitRepositories.save(commit);
-        }
     }
 
 }
