@@ -110,7 +110,7 @@ public class HomeworkController {
                                 }else{
                                     commitInfo.put("submitTime", "未提交");
                                 }
-                                if (commit.getPublishscore() == 1) {
+                                if (commit.getPublishScore() == 1) {
                                     commitInfo.put("score", homework.getScore());
                                 } else {
                                     commitInfo.put("score", "未公布成绩");
@@ -171,10 +171,10 @@ public class HomeworkController {
                         commitInfo.put("submitRatio",submitRatio);
                         commitInfo.put("workid",workId);
                         commitInfo.put("publish",commit.getPublish());
-                        commitInfo.put("publishScore",commit.getPublishscore());
+                        commitInfo.put("publishScore",commit.getPublishScore());
 
                         System.out.println("publish:" + commit.getPublish());
-                        System.out.println("publishScore:" + commit.getPublishscore());
+                        System.out.println("publishScore:" + commit.getPublishScore());
 
                         commitInfoList.add(commitInfo);
                     }
@@ -511,6 +511,7 @@ public class HomeworkController {
 
             String cid = publishScoreData.get("cid");
             int workid = Integer.valueOf(publishScoreData.get("workid"));
+            System.out.println("publish:"+publishScoreData.get("publishScore"));
             int publishScore = Integer.valueOf(publishScoreData.get("publishScore"));
 
             if(!commitService.checkWorkIdExist(workid,cid)){
