@@ -162,18 +162,37 @@ public class CorrectHomeworkController {
             String workid = correctData.get("workid");
             String sno = correctData.get("sno");
             String score = correctData.get("score");
+            if(correctData.get("comment") != null){
+                String comment = correctData.get("comment");
 
-            Integer scoreNum = Integer.valueOf(score);
-            Integer workId = Integer.valueOf(workid);
+                Integer scoreNum = Integer.valueOf(score);
+                Integer workId = Integer.valueOf(workid);
 
-            Homework homework = homeworkService.findByCidSnoAndWorkid(cid,sno,workId);
+                Homework homework = homeworkService.findByCidSnoAndWorkid(cid,sno,workId);
 
-            if(homework != null){
-                if(scoreNum != null) {
-                    homework.setScore(scoreNum);
+                if(homework != null){
+                    if(scoreNum != null) {
+                        homework.setScore(scoreNum);
+                        homework.setComment(comment);
+                    }
+                    homeworkService.save(homework);
                 }
-                homeworkService.save(homework);
+            }else{
+
+                Integer scoreNum = Integer.valueOf(score);
+                Integer workId = Integer.valueOf(workid);
+
+                Homework homework = homeworkService.findByCidSnoAndWorkid(cid,sno,workId);
+
+                if(homework != null){
+                    if(scoreNum != null) {
+                        homework.setScore(scoreNum);
+                    }
+                    homeworkService.save(homework);
+                }
             }
+
+
         } else if (userType == 0) {
             response.put("status","error");
             response.put("message","用户权限不足");

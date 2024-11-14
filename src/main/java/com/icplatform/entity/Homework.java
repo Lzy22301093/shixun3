@@ -21,6 +21,7 @@ public class Homework {
     private String cid;
     private int workid;
     private String reviestatus;
+    private String comment;
 
     public Homework() {}
 
@@ -60,4 +61,7 @@ public class Homework {
 
     public String getReviestatus() { return reviestatus; }
     public void setReviestatus(String reviestatus) { this.reviestatus = reviestatus; }
+
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
 }

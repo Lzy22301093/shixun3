@@ -172,6 +172,7 @@ public class HomeworkController {
                         commitInfo.put("workid",workId);
                         commitInfo.put("publish",commit.getPublish());
                         commitInfo.put("publishScore",commit.getPublishscore());
+                        commitInfo.put("fullMark",commit.getFullmark());
 
                         System.out.println("publish:" + commit.getPublish());
                         System.out.println("publishScore:" + commit.getPublishscore());
