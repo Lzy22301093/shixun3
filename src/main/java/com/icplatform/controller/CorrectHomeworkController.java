@@ -5,6 +5,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Homework;
 import com.icplatform.service.HomeworkService;
+import com.icplatform.service.StudentService;
 import com.icplatform.service.TeachingService;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ public class CorrectHomeworkController {
 
     @Autowired
     private HomeworkService homeworkService;
+    @Autowired
+    private StudentService studentService;
 
 
     @PostMapping("/displayCorrect")
@@ -49,11 +53,35 @@ public class CorrectHomeworkController {
             int workid = Integer.valueOf(displayData.get("workid"));
 
             List<Homework> homeworkList = homeworkService.findByCidAndWorkid(cid,workid);
+            List<Map<String, Object>> homeworkInfoList = new ArrayList<>();
 
+            for(Homework homework : homeworkList){
+
+                String sno = homework.getSno();
+                String sname = studentService.searchBySno(sno).getSname();
+
+                Map<String,Object> homeworkInfo = new HashMap<>();
+
+                homeworkInfo.put("sno",sno);
+                homeworkInfo.put("sname",sname);
+                homeworkInfo.put("workid",homework.getWorkid());
+                homeworkInfo.put("cid",cid);
+                homeworkInfo.put("cno",homework.getCno());
+                homeworkInfo.put("hname",homework.getHname());
+                homeworkInfo.put("id",homework.getId());
+                homeworkInfo.put("path",homework.getPath());
+                homeworkInfo.put("reviestatus",homework.getReviestatus());
+                homeworkInfo.put("score",homework.getScore());
+                homeworkInfo.put("start",homework.getStart());
+                homeworkInfo.put("end",homework.getEnd());
+                homeworkInfo.put("stime",homework.getStime());
+
+                homeworkInfoList.add(homeworkInfo);
+            }
             String newToken = JWTUtil.generateToken(userType,username);
 
             Map<String,Object> response = new HashMap<>();
-            response.put("homeworkList",homeworkList);
+            response.put("homeworkList",homeworkInfoList);
             response.put("status","success");
             response.put("newToken",newToken);
             return response;

@@ -20,7 +20,7 @@ public class Commit {
     private String content;
     private int fullmark;
     private int publish;
-    private int publishScore;
+    private int publishscore;
 
     public Commit() {}
 
@@ -84,10 +84,10 @@ public class Commit {
     public void setPublish(int publish) {
         this.publish = publish;
     }
-    public int getPublishScore() {
-        return publishScore;
+    public int getPublishscore() {
+        return publishscore;
     }
-    public void setPublishScore(int publishScore) {
-        this.publishScore = publishScore;
+    public void setPublishscore(int publishscore) {
+        this.publishscore = publishscore;
     }
 }

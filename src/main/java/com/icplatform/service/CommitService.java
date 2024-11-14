@@ -32,7 +32,7 @@ public class CommitService {
         commit.setContent(content);
         commit.setFullmark(fullmark);
         commit.setPublish(publish);
-        commit.setPublishScore(publishScore);
+        commit.setPublishscore(publishScore);
         commitRepositories.save(commit);
     }
 
@@ -74,11 +74,11 @@ public class CommitService {
             commitRepositories.save(commit);
         }
     }
-    public void updatePublishScore(int publishScore, String cid, int workid) {
+    public void updatePublishScore(int publishscore, String cid, int workid) {
         Commit commit = commitRepositories.findByCidAndWorkId(cid, workid);
 
         if(commit != null){
-            commit.setPublishScore(publishScore);
+            commit.setPublishscore(publishscore);
             commitRepositories.save(commit);
         }
     }
