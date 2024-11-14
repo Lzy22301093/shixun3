@@ -4,17 +4,18 @@ package com.icplatform.controller;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.FileUploadResponse;
+import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.entity.Commit;
 import com.icplatform.entity.Homework;
 import com.icplatform.service.CourseService;
 import com.icplatform.service.HomeworkService;
 import com.icplatform.service.CommitService;
 import com.icplatform.service.SCService;
-import com.icplatform.utils.GsonUtil;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,6 +31,8 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -72,7 +75,7 @@ public class HomeworkController {
 
         if (userType == 0) {
             String cid = homeworkDate.get("cid");
-            String sno = homeworkDate.get("sno");
+            String sno = homeworkDate.get("pno");
 
             if(cid != null && sno != null && sno.charAt(0) == '2') {
 
@@ -84,13 +87,14 @@ public class HomeworkController {
                     List<Map<String, Object>> commitInfoList = new ArrayList<>();
                     for (Commit commit : commitList) {
 
+
                         int publish = commit.getPublish();
                         if (publish == 1) {
+
                             int workId = commit.getWorkid();
 
                             Homework homework = homeworkService.findByCidSnoAndWorkid(cid, sno, workId);
 
-                            if(homework != null){
                                 int submitStudents = homeworkService.countSubmittedByCidAndWorkId(cid, workId);
 
                                 String submitRatio = submitStudents + "/" + totalStudents;
@@ -100,9 +104,10 @@ public class HomeworkController {
                                 commitInfo.put("start", commit.getStart());
                                 commitInfo.put("end", commit.getEnd());
                                 commitInfo.put("submitRatio", submitRatio);
+                                commitInfo.put("workid", workId);
                                 if (homework != null) {
                                     commitInfo.put("submitTime", homework.getStime());
-                                } else {
+                                }else{
                                     commitInfo.put("submitTime", "未提交");
                                 }
                                 if (commit.getPublishscore() == 1) {
@@ -110,18 +115,20 @@ public class HomeworkController {
                                 } else {
                                     commitInfo.put("score", "未公布成绩");
                                 }
-                                commitInfo.put("reviestatus", homework.getReviestatus());
-
+                                if(homework != null){
+                                    commitInfo.put("reviestatus", homework.getReviestatus());
+                                }else{
+                                    commitInfo.put("reviestatus", "未提交");
+                                }
                                 LocalDateTime now = LocalDateTime.now();
-                                if (now.isBefore(homework.getStart()) || now.isAfter(homework.getEnd())) {
-                                    commitInfo.put("submitStatus", "not submission");
+                                if (now.isBefore(commit.getStart()) || now.isAfter(commit.getEnd())) {
+                                    commitInfo.put("submitStatus", "0");
                                 } else {
-                                    commitInfo.put("submitStatus", "can submit");
+                                    commitInfo.put("submitStatus", "1");
                                 }
                                 commitInfoList.add(commitInfo);
                             }
                         }
-                    }
                     String newToken = JWTUtil.generateToken(userType, username);
 
                     Map<String, Object> response = new HashMap<>();
@@ -130,22 +137,18 @@ public class HomeworkController {
                     response.put("message","作业列表返回成功");
                     response.put("newToken",newToken);
                     return response;
+                    }
+
                 }else{
                     Map<String, Object> response = new HashMap<>();
                     response.put("status","error");
                     response.put("message","没作业");
                     return response;
                 }
-            }
-            System.out.println(sno.charAt(0));
-            Map<String, Object> response = new HashMap<>();
-            response.put("status","error");
-            response.put("message","用户权限错误,请重新登录");
-            return response;
         }else if (userType == 1) {
 
             String cid = homeworkDate.get("cid");
-            String tno = homeworkDate.get("tno");
+            String tno = homeworkDate.get("pno");
 
             if(cid != null && tno != null && tno.charAt(0) == '5'){
                 int totalStudents = scService.countStudentsByCid(cid);
@@ -166,6 +169,12 @@ public class HomeworkController {
                         commitInfo.put("start",commit.getStart());
                         commitInfo.put("end",commit.getEnd());
                         commitInfo.put("submitRatio",submitRatio);
+                        commitInfo.put("workid",workId);
+                        commitInfo.put("publish",commit.getPublish());
+                        commitInfo.put("publishScore",commit.getPublishscore());
+
+                        System.out.println("publish:" + commit.getPublish());
+                        System.out.println("publishScore:" + commit.getPublishscore());
 
                         commitInfoList.add(commitInfo);
                     }
@@ -221,9 +230,9 @@ public class HomeworkController {
                 .body(resource);
     }
 
-    //上传作业
+    //提交作业
     @PostMapping("/upload")
-    public FileUploadResponse uploadHomework(@RequestHeader Map<String, String> header, @RequestParam("homeworkFile") MultipartFile homeworkFile, @RequestParam("cid") String cid, @RequestParam("sno") String sno, @RequestParam("workid") int workid, @RequestParam("reviestatus") String reviestatus) throws IOException {
+    public FileUploadResponse uploadHomework(@RequestHeader Map<String, String> header, @RequestParam("homeworkFile") MultipartFile homeworkFile, @RequestParam("cid") String cid, @RequestParam("sno") String sno, @RequestParam("workid") int workid) throws IOException {
 
         String token = header.get("token");
         DecodedJWT decodedJWT;
@@ -265,6 +274,8 @@ public class HomeworkController {
 
             // 保存新文件
             homeworkFile.transferTo(uploadHomework);
+
+            String reviestatus = "未批改";
             // 检查数据库中是否存在相同的 hname
             try {
                 // 存在相同的 hname 则更新记录
@@ -365,14 +376,16 @@ public class HomeworkController {
 
     //更新布置的作业
     @PostMapping("/assign/update")
-    public Map<String, String> uploadAssignHomework(@RequestHeader Map<String, String> header,
+    public Map<String, String> updateAssignHomework(@RequestHeader Map<String, String> header,
                                                     @RequestParam("homework") MultipartFile homework,
                                                     @RequestParam("start") String start,
                                                     @RequestParam("end") String end,
                                                     @RequestParam("workid") int workid,
                                                     @RequestParam("cid") String cid,
                                                     @RequestParam("content") String content,
-                                                    @RequestParam("fullmark") int fullmark) throws IOException {
+                                                    @RequestParam("fullmark") int fullmark,
+                                                    @RequestParam("publish") int publish,
+                                                    @RequestParam("publishScore") int publishScore) throws IOException {
         String token = header.get("token");
         DecodedJWT decodedJWT;
         try {
@@ -417,7 +430,97 @@ public class HomeworkController {
             homework.transferTo(savedHomework);
             // 将路径和文件名保存在数据库的commit表中
             String filePath = savedHomework.getAbsolutePath().replace("\\", "/");
-            commitService.updateAssignHomework(startTime, endTime, workid, cid, filePath, originalFilename, content, fullmark);
+            commitService.updateAssignHomework(startTime, endTime, workid, cid, filePath, originalFilename, content, fullmark, publish, publishScore);
+
+            String newToken = JWTUtil.generateToken(userType, username);
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "作业更新成功");
+            response.put("newToken", newToken);
+            return response;
+        }
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "更新布置作业失败，权限不足");
+        return response;
+    }
+
+    //更新布置的作业
+    @PostMapping("/assign/update/publish")
+    public Map<String, String> updatePublish(@RequestHeader Map<String, String> header,@RequestBody Map<String, String> publishData) throws IOException {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+
+            String cid = publishData.get("cid");
+            int workid = Integer.valueOf(publishData.get("workid"));
+            int publish = Integer.valueOf(publishData.get("publish"));
+
+            if(!commitService.checkWorkIdExist(workid,cid)){
+                Map<String, String> response = new HashMap<>();
+                response.put("status", "error");
+                response.put("message","workid不存在，无法更新");
+                return response;
+            }
+
+            commitService.updatePublish(publish, cid, workid);
+
+            String newToken = JWTUtil.generateToken(userType, username);
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("message", "作业更新成功");
+            response.put("newToken", newToken);
+            return response;
+        }
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "更新布置作业失败，权限不足");
+        return response;
+    }
+
+    //更新布置的作业
+    @PostMapping("/assign/update/publishScore")
+    public Map<String, String> updatePublishScore(@RequestHeader Map<String, String> header,@RequestBody Map<String, String> publishScoreData) throws IOException {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+
+            String cid = publishScoreData.get("cid");
+            int workid = Integer.valueOf(publishScoreData.get("workid"));
+            int publishScore = Integer.valueOf(publishScoreData.get("publishScore"));
+
+            if(!commitService.checkWorkIdExist(workid,cid)){
+                Map<String, String> response = new HashMap<>();
+                response.put("status", "error");
+                response.put("message","workid不存在，无法更新");
+                return response;
+            }
+
+            commitService.updatePublishScore(publishScore, cid, workid);
 
             String newToken = JWTUtil.generateToken(userType, username);
             Map<String, String> response = new HashMap<>();
@@ -600,5 +703,118 @@ public class HomeworkController {
         return response;
     }
 
+  /*  //删除资源
+    @PostMapping("/assign/delete")
+    public Map<String, Object> AssignHomeworkDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> homeworkData) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
 
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            // 使用 GsonUtil 从 JSON 转换为 List<String>
+            List<String> fileNames = GsonUtil.fromJson(fileData.get("fileName").toString(), List.class);
+
+            System.out.println(fileData);
+            System.out.println(fileNames);
+
+            if (fileNames != null && !fileNames.isEmpty()) {
+                // 假设删除所有传入的文件
+                for (String fileName : fileNames) {
+                    String tpath = assetsService.searchTpathByFname(fileName);
+                    String message = assetsService.deleteAssetByFname(fileName);
+                    File file = new File(tpath);
+                    file.delete();
+                }
+
+                String newToken = JWTUtil.generateToken(userType, username);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "success");
+                response.put("message", "文件删除成功");
+                response.put("newToken", newToken);
+                return response;
+            }
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "权限不足,删除失败");
+        return response;
+    }*/
+
+    // 生成预览链接
+    @GetMapping("/preview")
+    public ResponseEntity<PreviewLinkResponse> generatePreviewLink(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam String sno, @RequestParam int workid) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error"));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 0 || userType == 1) {
+            String correctedFileName = null;
+
+            String filePath = homeworkService.findByCidSnoAndWorkid(cid, sno, workid).getPath();
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error"));
+            }
+
+            filePath = filePath.replace("\\", "/");
+
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("error", "无法获取IP地址"));
+            }
+
+            // 生成预览链接，编码路径确保格式正确
+            String previewUrl = "http://" + ipAddress + ":8080/api/homework/preview/pdf?filePath=" +
+                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error"));
+    }
+
+    // 用于处理PDF预览请求的方法
+    @GetMapping("/preview/pdf")
+    public ResponseEntity<Resource> previewPdf(@RequestParam String filePath) {
+        try {
+            Path path = Paths.get(URLDecoder.decode(filePath, StandardCharsets.UTF_8.name()));
+            Resource fileResource = new UrlResource(path.toUri());
+
+            if (!fileResource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
+                    .body(fileResource);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }
