@@ -18,6 +18,7 @@ public class Assets {
     private String cid;
     private String tpath;
     private Date time;
+    private int aid;
 
     public Assets() {}
 
@@ -33,5 +34,7 @@ public class Assets {
     public String getCid(){return this.cid;}
     public void setCid(String cid){this.cid = cid;}
     public byte[] getSize(){return this.size;}
+    public void setAid(int aid){this.aid = aid;}
+    public int getAid(){return this.aid;}
 
 }

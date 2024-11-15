@@ -20,4 +20,6 @@ public interface AssetsRepositories extends JpaRepository<Assets, Integer> {
 
     // 按文件名查找文件记录
     Assets findByFname(String fname);
+
+    String findByCidAndAid(String cid, int aid);
 }

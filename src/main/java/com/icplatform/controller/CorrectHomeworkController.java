@@ -92,6 +92,7 @@ public class CorrectHomeworkController {
         }
     }
 
+    //预览
     @GetMapping("/sendHomework")
     public ResponseEntity<PreviewLinkResponse> generateHomeworkPreviewLink(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam int workid, @RequestParam String sno) {
         String token = header.get("token");

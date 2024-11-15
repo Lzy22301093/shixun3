@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -31,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.*;
+import java.util.List;
 
 import com.icplatform.dto.FileUploadResponse;
 
@@ -51,7 +53,7 @@ public class AssetsController {
 
     //上传资源并更新数据库
     @PostMapping("/upload")
-    public FileUploadResponse uploadFile(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid, @RequestParam("tpath") String tpath) throws IOException {
+    public FileUploadResponse uploadFile(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid, @RequestParam("tpath") String tpath, @RequestParam("aid") int aid) throws IOException {
 
         String token = header.get("token");
         DecodedJWT decodedJWT;
@@ -98,10 +100,10 @@ public class AssetsController {
             // 检查数据库中是否存在相同的 fname
             try {
                 // 存在相同的 fname 则更新记录
-                assetsService.updateAssetByFname(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid); // 将路径中的反斜杠替换为正斜杠
+                assetsService.updateAssetByFname(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid, aid); // 将路径中的反斜杠替换为正斜杠
             } catch (IllegalArgumentException e) {
                 // 不存在相同的 fname 则插入新记录
-                assetsService.insertNewAsset(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid); // 将路径中的反斜杠替换为正斜杠
+                assetsService.insertNewAsset(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid, aid); // 将路径中的反斜杠替换为正斜杠
             }
 
             String newToken = JWTUtil.generateToken(userType, username);
@@ -288,6 +290,8 @@ public class AssetsController {
         return normalized;
     }
 
+
+
     //下载资源
     @GetMapping("/download")
     public ResponseEntity<Resource> downloadFile(@RequestParam String filePath) {
@@ -316,7 +320,7 @@ public class AssetsController {
 
     //生成资源下载链接
     @GetMapping("/generateDownloadLink")
-    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header, @RequestParam String fileName) {
+    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam int aid) {
         String token = header.get("token");
         DecodedJWT decodedJWT;
 
@@ -330,30 +334,18 @@ public class AssetsController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if (userType == 0 || userType == 1) {
-            String correctedFileName = null;
-
-            // 解码文件名
-            String decodedFname = null;
-            try {
-                decodedFname = URLDecoder.decode(fileName, StandardCharsets.UTF_8.name());
-                // 将空格替换回加号
-                correctedFileName = decodedFname.replace(" ", "+");
-                System.out.println(correctedFileName);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
-            }
-
-            System.out.println("解码后的文件名: " + correctedFileName);
-            String filePath = assetsService.searchTpathByFname(correctedFileName);
+            // 根据 cid, workid 和 sno 查找文件路径
+            String filePath = assetsService.searchByCidAndAid(cid, aid);
             System.out.println("文件路径: " + filePath);
 
             if (filePath == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("", "error"));
             }
 
+            // 替换路径中的反斜杠为正斜杠
             filePath = filePath.replace("\\", "/");
 
+            // 获取当前 IP 地址
             String ipAddress;
             try {
                 ipAddress = InetAddress.getLocalHost().getHostAddress();
@@ -361,10 +353,14 @@ public class AssetsController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
             }
 
-            String downloadUrl = "http://" + ipAddress + ":8080/api/assets/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
-            String newToken = JWTUtil.generateToken(userType,username);
+            // 构建下载链接
+            String downloadUrl = "http://" + ipAddress + ":8080/api/homework/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            System.out.println(downloadUrl);
 
-            return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl,"success" ,newToken));
+            // 生成新的 token
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl, "success", newToken));
         }
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));

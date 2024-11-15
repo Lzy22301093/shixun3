@@ -20,7 +20,7 @@ public class AssetsService {
     }
 
     // 更新资源信息
-    public void updateAssetByFname(String fname, String type, byte[] size, String tpath, Date time,String cid) {
+    public void updateAssetByFname(String fname, String type, byte[] size, String tpath, Date time,String cid, int aid) {
         Assets assets = assetsRepositories.findByFname(fname);
         if (assets == null) {
             throw new IllegalArgumentException("资源不存在");
@@ -30,11 +30,12 @@ public class AssetsService {
         assets.setSize(size);  // 更新文件大小
         assets.setTime(time);  // 更新时间戳
         assets.setCid(cid);//更新cid
+        assets.setAid(aid);
         assetsRepositories.save(assets);  // 保存更新后的资产
     }
 
     // 插入资源信息
-    public void insertNewAsset(String fname, String type, byte[] size, String tpath, Date time,String cid) {
+    public void insertNewAsset(String fname, String type, byte[] size, String tpath, Date time, String cid, int aid) {
         Assets assets = new Assets();
         assets.setFname(fname);
         assets.setType(type);
@@ -42,11 +43,12 @@ public class AssetsService {
         assets.setTpath(tpath);
         assets.setTime(time);
         assets.setCid(cid);
+        assets.setAid(aid);
         assetsRepositories.save(assets);  // 保存新资产
     }
 
-    public Assets getAssetByFname(String fname) {
-        return assetsRepositories.findByFname(fname);
+    public String searchByCidAndAid(String cid, int aid) {
+        return assetsRepositories.findByCidAndAid(cid, aid);
     }
 
     public List<String> getTpathByStarting(String path) {

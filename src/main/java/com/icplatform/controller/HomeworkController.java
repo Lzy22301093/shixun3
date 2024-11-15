@@ -205,31 +205,7 @@ public class HomeworkController {
         return response;
     }
 
-    //课程作业下载
-    @GetMapping("/download")
-    public ResponseEntity<Resource> downloadHomework(@RequestParam String filePath){
 
-        File file = new File(filePath);
-        Resource resource = new FileSystemResource(file);
-        if (!resource.exists()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .header("status","error")
-                    .build();
-        }
-
-        // 设置 Content-Disposition 响应头
-        String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
-        HttpHeaders headers = new HttpHeaders();
-        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
-
-        // 返回文件资源及新的 token
-        return ResponseEntity.ok()
-                .headers(headers)
-                .contentLength(file.length())
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header("status","success")
-                .body(resource);
-    }
 
     //提交作业
     @PostMapping("/upload")
@@ -537,9 +513,38 @@ public class HomeworkController {
         return response;
     }
 
-    //下载作业链接
+    //课程作业下载
+    @GetMapping("/download")
+    public ResponseEntity<Resource> downloadHomework(@RequestParam String filePath){
+        File file = new File(filePath);
+        Resource resource = new FileSystemResource(file);
+
+        if (!resource.exists()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .header("status","error")
+                    .build();
+        }
+
+        // 设置 Content-Disposition 响应头
+        String filename = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+
+        // 返回文件资源及新的 token
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(file.length())
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header("status","success")
+                .body(resource);
+    }
+
+    //生成资源下载链接
     @GetMapping("/generateDownloadLink")
-    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header, @RequestParam String homeworkName) {
+    public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header,
+                                                                     @RequestParam String cid,
+                                                                     @RequestParam int workid,
+                                                                     @RequestParam String sno) {
         String token = header.get("token");
         DecodedJWT decodedJWT;
 
@@ -553,30 +558,18 @@ public class HomeworkController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if (userType == 0 || userType == 1) {
-            String correctedFileName = null;
-
-            // 解码文件名
-            String decodedFname = null;
-            try {
-                decodedFname = URLDecoder.decode(homeworkName, StandardCharsets.UTF_8.name());
-                // 将空格替换回加号
-                correctedFileName = decodedFname.replace(" ", "+");
-                System.out.println(correctedFileName);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
-            }
-
-            System.out.println("解码后的文件名: " + correctedFileName);
-            String filePath = homeworkService.searchPathByHname(homeworkName);
+            // 根据 cid, workid 和 sno 查找文件路径
+            String filePath = homeworkService.findByCidSnoAndWorkid(cid, sno, workid).getPath();
             System.out.println("文件路径: " + filePath);
 
             if (filePath == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("", "error"));
             }
 
+            // 替换路径中的反斜杠为正斜杠
             filePath = filePath.replace("\\", "/");
 
+            // 获取当前 IP 地址
             String ipAddress;
             try {
                 ipAddress = InetAddress.getLocalHost().getHostAddress();
@@ -584,14 +577,70 @@ public class HomeworkController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
             }
 
+            // 构建下载链接
             String downloadUrl = "http://" + ipAddress + ":8080/api/homework/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
-            String newToken = JWTUtil.generateToken(userType,username);
+            System.out.println(downloadUrl);
 
-            return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl, "success",newToken));
+            // 生成新的 token
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl, "success", newToken));
         }
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));
     }
+
+    //生成资源下载链接
+    @GetMapping("/assign/generateDownloadLink")
+    public ResponseEntity<DownloadLinkResponse> generateAssignDownloadLink(@RequestHeader Map<String, String> header,
+                                                                     @RequestParam String cid,
+                                                                     @RequestParam int workid) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
+
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new DownloadLinkResponse("", "error"));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 0 || userType == 1) {
+            // 根据 cid, workid 和 sno 查找文件路径
+            String filePath = commitService.findByCidAndWorkId(cid, workid).getPath();
+            System.out.println("文件路径: " + filePath);
+
+            if (filePath == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new DownloadLinkResponse("", "error"));
+            }
+
+            // 替换路径中的反斜杠为正斜杠
+            filePath = filePath.replace("\\", "/");
+
+            // 获取当前 IP 地址
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new DownloadLinkResponse("", "error"));
+            }
+
+            // 构建下载链接
+            String downloadUrl = "http://" + ipAddress + ":8080/api/homework/download?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            System.out.println(downloadUrl);
+
+            // 生成新的 token
+            String newToken = JWTUtil.generateToken(userType, username);
+
+            return ResponseEntity.ok(new DownloadLinkResponse(downloadUrl, "success", newToken));
+        }
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));
+    }
+
+
 
     //老师查看布置作业的列表
     @PostMapping("/display/homework")
@@ -790,6 +839,8 @@ public class HomeworkController {
             // 生成预览链接，编码路径确保格式正确
             String previewUrl = "http://" + ipAddress + ":8080/api/homework/preview/pdf?filePath=" +
                     URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+
+            System.out.println(previewUrl);
             String newToken = JWTUtil.generateToken(userType, username);
 
             return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
@@ -798,7 +849,7 @@ public class HomeworkController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error"));
     }
 
-    // 用于处理PDF预览请求的方法
+    // 用于处理PDF预览请求
     @GetMapping("/preview/pdf")
     public ResponseEntity<Resource> previewPdf(@RequestParam String filePath) {
         try {
