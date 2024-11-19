@@ -4,6 +4,7 @@ import com.icplatform.entity.Notification;
 import com.icplatform.repositories.NotificationRepositories;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -15,35 +16,35 @@ public class NotificationService {
         this.notificationRepositories = notificationRepositories;
     }
 
-    public Notification searchByCidAndNid(String cid, int nid) {
-        return notificationRepositories.findByCidAndNid(cid,nid);
-    }
-
     public List<Notification> searchByCid(String cid) {
         return notificationRepositories.findByCid(cid);
     }
 
-    public void updateNotification(String name, String cid, int nid, String content) {
-        Notification notification = notificationRepositories.findByCidAndNid(cid,nid);
+    public void updateNotification(String name, String cid, String tno, String content, LocalDateTime time, int nid) {
+        Notification notification = notificationRepositories.findByCidAndNid(cid, nid);
         if(notification != null) {
             notification.setName(name);
             notification.setContent(content);
+            notification.setTno(tno);
+            notification.setTime(time);
             notificationRepositories.save(notification);
         }else{
             throw new IllegalArgumentException("课程通知不存在");
         }
     }
 
-    public void insertNotification(String name, String cid, int nid, String content) {
+    public void insertNotification(String name, String cid, String tno, String content, LocalDateTime time,int nid) {
         Notification notification = new Notification();
         notification.setCid(cid);
-        notification.setNid(nid);
         notification.setName(name);
         notification.setContent(content);
+        notification.setTime(time);
+        notification.setNid(nid);
+        notification.setTno(tno);
         notificationRepositories.save(notification);
     }
 
-    public String deleteNotification(String cid, int nid) {
+    public String deleteNotification(int nid, String cid) {
         Notification notification = notificationRepositories.findByCidAndNid(cid,nid);
         if(notification != null) {
             notificationRepositories.delete(notification);
@@ -58,4 +59,5 @@ public class NotificationService {
     public void save(Notification notification) {
         notificationRepositories.save(notification);
     }
+
 }

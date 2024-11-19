@@ -21,5 +21,11 @@ public interface AssetsRepositories extends JpaRepository<Assets, Integer> {
     // 按文件名查找文件记录
     Assets findByFname(String fname);
 
-    String findByCidAndAid(String cid, int aid);
+    @Query("SELECT a.tpath FROM Assets a WHERE a.cid = :cid AND a.aid = :aid")
+    String findTpathByCidAndAid(@Param("cid") String cid, @Param("aid") int aid);
+
+
+    Assets findByCidAndAid(String cid, int aid);
+
+    Assets findByTpath(String tpath);
 }

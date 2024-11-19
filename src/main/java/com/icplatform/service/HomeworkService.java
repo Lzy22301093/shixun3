@@ -63,7 +63,7 @@ public class HomeworkService {
     }
 
     //更新作业
-    public void updateHomeworkByHname(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time, String reviestatus) {
+    public void updateHomeworkByCidAndSnoAndWorkid(String hname, String path, String cid, String sno, int workid, String cno, LocalDateTime submit_time, String reviestatus) {
         Homework homework = homeworkRepositories.findByCidAndSnoAndWorkid(cid,sno,workid);
         if (homework == null) {
             throw new IllegalArgumentException("作业不存在");
@@ -96,5 +96,18 @@ public class HomeworkService {
 
     public String searchPathByHname(String hname) {
         return homeworkRepositories.findByHname(hname).getPath();
+    }
+
+    public String deleteHomeworkByFname(String hname) {
+
+        Homework homework = homeworkRepositories.findByHname(hname);
+        if(homework != null) {
+            homeworkRepositories.delete(homework);
+            String result = "数据库记录删除成功";
+            return result;
+        }else{
+            String result = "数据库记录不存在";
+            return result;
+        }
     }
 }

@@ -4,7 +4,6 @@ public class PreviewLinkResponse {
     private String previewLink;
     private String status;
     private String token;
-
     public PreviewLinkResponse(String previewLink, String status) {
         this.previewLink = previewLink;
         this.status = status;

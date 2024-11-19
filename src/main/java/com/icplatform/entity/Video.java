@@ -3,6 +3,8 @@ package com.icplatform.entity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 
+import java.time.LocalDateTime;
+
 @Entity
 public class Video {
 
@@ -13,6 +15,8 @@ public class Video {
     private String path;
     private String cid;
     private int vid;
+    private LocalDateTime start;
+    private LocalDateTime end;
 
     public Video(){}
 
@@ -27,4 +31,10 @@ public class Video {
 
     public void setCid(String cid) { this.cid = cid; }
     public String getCid() { return cid; }
+
+    public void setStart(LocalDateTime start) { this.start = start; }
+    public LocalDateTime getStart() { return start; }
+
+    public void setEnd(LocalDateTime end) { this.end = end; }
+    public LocalDateTime getEnd() { return end; }
 }

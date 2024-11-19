@@ -2,6 +2,7 @@ package com.icplatform.controller;
 
 
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.google.gson.reflect.TypeToken;
 import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.FileUploadResponse;
 import com.icplatform.dto.PreviewLinkResponse;
@@ -11,11 +12,11 @@ import com.icplatform.service.CourseService;
 import com.icplatform.service.HomeworkService;
 import com.icplatform.service.CommitService;
 import com.icplatform.service.SCService;
+import com.icplatform.utils.GsonUtil;
 import com.icplatform.utils.JWTUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,20 +26,18 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.net.InetAddress;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -256,7 +255,7 @@ public class HomeworkController {
             // 检查数据库中是否存在相同的 hname
             try {
                 // 存在相同的 hname 则更新记录
-                homeworkService.updateHomeworkByHname(originalFilename, uploadHomework.getAbsolutePath().replace("\\", "/") , cid, sno, workid, cno, currentTime,reviestatus); // 将路径中的反斜杠替换为正斜杠
+                homeworkService.updateHomeworkByCidAndSnoAndWorkid(originalFilename, uploadHomework.getAbsolutePath().replace("\\", "/") , cid, sno, workid, cno, currentTime,reviestatus); // 将路径中的反斜杠替换为正斜杠
                 System.out.println("1");
             } catch (IllegalArgumentException e) {
                 // 不存在相同的 hname 则插入新记录
@@ -467,7 +466,7 @@ public class HomeworkController {
         return response;
     }
 
-    //更新布置的作业
+    //更新布置的作业分数
     @PostMapping("/assign/update/publishScore")
     public Map<String, String> updatePublishScore(@RequestHeader Map<String, String> header,@RequestBody Map<String, String> publishScoreData) throws IOException {
         String token = header.get("token");
@@ -539,7 +538,7 @@ public class HomeworkController {
                 .body(resource);
     }
 
-    //生成资源下载链接
+    //生成学生作业下载链接
     @GetMapping("/generateDownloadLink")
     public ResponseEntity<DownloadLinkResponse> generateDownloadLink(@RequestHeader Map<String, String> header,
                                                                      @RequestParam String cid,
@@ -590,7 +589,7 @@ public class HomeworkController {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new DownloadLinkResponse("", "error"));
     }
 
-    //生成资源下载链接
+    //生成布置作业下载链接
     @GetMapping("/assign/generateDownloadLink")
     public ResponseEntity<DownloadLinkResponse> generateAssignDownloadLink(@RequestHeader Map<String, String> header,
                                                                      @RequestParam String cid,
@@ -754,9 +753,9 @@ public class HomeworkController {
         return response;
     }
 
-  /*  //删除资源
+    //删除布置作业
     @PostMapping("/assign/delete")
-    public Map<String, Object> AssignHomeworkDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> homeworkData) {
+    public Map<String, Object> AssignHomeworkDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> commitData) {//cid,
         String token = header.get("token");
         DecodedJWT decodedJWT;
 
@@ -773,46 +772,71 @@ public class HomeworkController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if (userType == 1) {
-            // 使用 GsonUtil 从 JSON 转换为 List<String>
-            List<String> fileNames = GsonUtil.fromJson(fileData.get("fileName").toString(), List.class);
+            // 使用 TypeToken 指定泛型类型
+            Type listOfStringType = new TypeToken<List<String>>() {}.getType();
+            Type listOfIntegerType = new TypeToken<List<Integer>>() {}.getType();
 
-            System.out.println(fileData);
-            System.out.println(fileNames);
+            // 转换 JSON 数据
+            List<String> cids = GsonUtil.fromJson(GsonUtil.toJson(commitData.get("cid")), listOfStringType);
+            List<Double> workidDoubles = GsonUtil.fromJson(GsonUtil.toJson(commitData.get("workid")), new TypeToken<List<Double>>() {}.getType());
 
-            if (fileNames != null && !fileNames.isEmpty()) {
-                // 假设删除所有传入的文件
-                for (String fileName : fileNames) {
-                    String tpath = assetsService.searchTpathByFname(fileName);
-                    String message = assetsService.deleteAssetByFname(fileName);
-                    File file = new File(tpath);
-                    file.delete();
-                }
+            // 转换 List<Double> 为 List<Integer>
+            List<Integer> workids = workidDoubles.stream()
+                    .map(Double::intValue)  // 将 Double 转为 Integer
+                    .collect(Collectors.toList());
 
-                String newToken = JWTUtil.generateToken(userType, username);
-
+            if (cids == null || workids == null || cids.size() != workids.size()) {
                 Map<String, Object> response = new HashMap<>();
-                response.put("status", "success");
-                response.put("message", "文件删除成功");
-                response.put("newToken", newToken);
+                response.put("status", "error");
+                response.put("message", "传入的cid和aid数量不匹配");
                 return response;
             }
+
+            boolean allDeleted = true;
+            for (int i = 0; i < cids.size(); i++) {
+                String cid = cids.get(i);
+                int workid = workids.get(i);
+
+                // 查询路径
+                String tpath = commitService.searchPathByCidAndWorkid(cid, workid);
+                if (tpath != null) {
+                    // 删除数据库记录和文件
+                    commitService.deleteCommitByCidAndWorkid(cid, workid);
+                    File file = new File(tpath);
+
+                    if (file.exists() && !file.delete()) {
+                        allDeleted = false;
+                    }
+                } else {
+                    allDeleted = false;
+                }
+            }
+
+            String newToken = JWTUtil.generateToken(userType, username);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", allDeleted ? "success" : "partial_success");
+            response.put("message", allDeleted ? "文件删除成功" : "文件删除失败");
+            response.put("newToken", newToken);
+            return response;
         }
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", "error");
         response.put("message", "权限不足,删除失败");
         return response;
-    }*/
+    }
 
-    // 生成预览链接
+    // 生成预览链接(学生作业)
     @GetMapping("/preview")
     public ResponseEntity<PreviewLinkResponse> generatePreviewLink(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam String sno, @RequestParam int workid) {
+        System.out.println("预览");
         String token = header.get("token");
         DecodedJWT decodedJWT;
 
         try {
             decodedJWT = JWTUtil.verifyToken(token);
         } catch (Exception e) {
+            System.out.println("预览");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error"));
         }
 
@@ -820,54 +844,88 @@ public class HomeworkController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if (userType == 0 || userType == 1) {
-            String correctedFileName = null;
-
+            System.out.println("预览1");
+            // 根据 cid 和 workid 查找文件路径
             String filePath = homeworkService.findByCidSnoAndWorkid(cid, sno, workid).getPath();
             if (filePath == null) {
+                System.out.println("路径是空的");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error"));
             }
 
+            // 替换路径中的反斜杠为正斜杠
             filePath = filePath.replace("\\", "/");
-
+            System.out.println("预览2");
+            // 获取当前 IP 地址
             String ipAddress;
             try {
                 ipAddress = InetAddress.getLocalHost().getHostAddress();
+                System.out.println("预览3");
             } catch (UnknownHostException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("error", "无法获取IP地址"));
+                System.out.println("无法获取ip");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error"));
             }
 
             // 生成预览链接，编码路径确保格式正确
-            String previewUrl = "http://" + ipAddress + ":8080/api/homework/preview/pdf?filePath=" +
-                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
-
-            System.out.println(previewUrl);
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/homework/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType, username);
+            System.out.println(previewUrl);
 
             return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
         }
-
+        System.out.println("权限错误");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error"));
     }
 
-    // 用于处理PDF预览请求
-    @GetMapping("/preview/pdf")
-    public ResponseEntity<Resource> previewPdf(@RequestParam String filePath) {
-        try {
-            Path path = Paths.get(URLDecoder.decode(filePath, StandardCharsets.UTF_8.name()));
-            Resource fileResource = new UrlResource(path.toUri());
+    // 生成预览链接(老师布置的作业)
+    @GetMapping("/assign/preview")
+    public ResponseEntity<PreviewLinkResponse> generateAssignPreviewLink(@RequestHeader Map<String, String> header,
+                                                                         @RequestParam String cid,
+                                                                         @RequestParam int workid) {
+        System.out.println("预览");
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
 
-            if (!fileResource.exists()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            System.out.println("预览");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error"));
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 0 || userType == 1) {
+            System.out.println("预览1");
+            // 根据 cid 和 workid 查找文件路径
+            String filePath = commitService.searchPathByCidAndWorkid(cid, workid);
+            if (filePath == null) {
+                System.out.println("路径是空的");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error"));
             }
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
-                    .body(fileResource);
+            // 替换路径中的反斜杠为正斜杠
+            filePath = filePath.replace("\\", "/");
+            System.out.println("预览2");
+            // 获取当前 IP 地址
+            String ipAddress;
+            try {
+                ipAddress = InetAddress.getLocalHost().getHostAddress();
+                System.out.println("预览3");
+            } catch (UnknownHostException e) {
+                System.out.println("无法获取ip");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error"));
+            }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            // 生成预览链接，编码路径确保格式正确
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/homework/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String newToken = JWTUtil.generateToken(userType, username);
+            System.out.println(previewUrl);
+
+            return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
         }
+        System.out.println("权限错误");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error"));
     }
+
 }

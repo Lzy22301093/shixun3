@@ -1,7 +1,7 @@
 package com.icplatform.controller;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.PreviewLinkResponse;
 import com.icplatform.service.AssetsService;
@@ -20,19 +20,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Date;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.icplatform.dto.FileUploadResponse;
 
@@ -160,8 +158,8 @@ public class AssetsController {
         private String type;  // "directory" or "file"
         private List<FileNode> children; // 子节点
         private String path;  // 文件的完整路径
+        private int aid; //文件aid
 
-        // Constructors, getters and setters
         public FileNode() {}
 
         public String getLabel() {
@@ -195,6 +193,10 @@ public class AssetsController {
         public void setPath(String path) {
             this.path = path;
         }
+
+        public int getAid() { return aid; }
+
+        public void setAid(int aid) { this.aid = aid; }
     }
 
     // 创建目录结构
@@ -208,6 +210,7 @@ public class AssetsController {
         rootNode.setChildren(new ArrayList<>());
         rootNode.setPath(rootPath);
         directoryMap.put(rootPath, rootNode);
+
 
         // 从数据库中的文件路径构建文件树
         for (String filePath : filePaths) {
@@ -223,15 +226,25 @@ public class AssetsController {
                 String currentPath = currentNode.getPath() + "/" + part;
 
                 FileNode nextNode = directoryMap.computeIfAbsent(currentPath, k -> {
+
                     FileNode node = new FileNode();
                     node.setLabel(part);
                     node.setType(isFile ? "file" : "directory");
                     node.setPath(currentPath);
+
+
+
                     if (!isFile) {
                         node.setChildren(new ArrayList<>());
                     }
                     return node;
                 });
+                if(isFile){
+                    System.out.println("路径： "+nextNode.getPath());
+                    int aid = assetsService.searchAidByTpath(nextNode.getPath());
+
+                    nextNode.setAid(aid);
+                }
 
                 if (!currentNode.getChildren().contains(nextNode)) {
                     currentNode.getChildren().add(nextNode);
@@ -262,6 +275,7 @@ public class AssetsController {
                     String currentPath = currentNode.getPath() + "/" + part;
 
                     FileNode nextNode = directoryMap.computeIfAbsent(currentPath, k -> {
+
                         FileNode node = new FileNode();
                         node.setLabel(part);
                         node.setType("directory");
@@ -335,7 +349,7 @@ public class AssetsController {
 
         if (userType == 0 || userType == 1) {
             // 根据 cid, workid 和 sno 查找文件路径
-            String filePath = assetsService.searchByCidAndAid(cid, aid);
+            String filePath = assetsService.searchTpathByCidAndAid(cid, aid);
             System.out.println("文件路径: " + filePath);
 
             if (filePath == null) {
@@ -415,15 +429,17 @@ public class AssetsController {
         }
     }
 
-    // 生成预览链接
+    //生成预览链接
     @GetMapping("/preview")
-    public ResponseEntity<PreviewLinkResponse> generatePreviewLink(@RequestHeader Map<String, String> header, @RequestParam String fileName) {
+    public ResponseEntity<PreviewLinkResponse> generatePreviewLink(@RequestHeader Map<String, String> header, @RequestParam String cid, @RequestParam int aid) {
+        System.out.println("预览");
         String token = header.get("token");
         DecodedJWT decodedJWT;
 
         try {
             decodedJWT = JWTUtil.verifyToken(token);
         } catch (Exception e) {
+            System.out.println("预览");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new PreviewLinkResponse("", "error"));
         }
 
@@ -431,66 +447,43 @@ public class AssetsController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if (userType == 0 || userType == 1) {
-            String correctedFileName = null;
-
-            // 解码文件名
-            try {
-                String decodedFname = URLDecoder.decode(fileName, StandardCharsets.UTF_8.name());
-                correctedFileName = decodedFname.replace(" ", "+");
-                System.out.println("解码后的文件名: " + correctedFileName);
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error"));
-            }
-
-            String filePath = assetsService.searchTpathByFname(correctedFileName);
+            System.out.println("预览1");
+            // 根据 cid 和 aid 查找文件路径
+            String filePath = assetsService.searchTpathByCidAndAid(cid, aid);
             if (filePath == null) {
+                System.out.println("路径是空的");
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new PreviewLinkResponse("", "error"));
             }
 
+            // 替换路径中的反斜杠为正斜杠
             filePath = filePath.replace("\\", "/");
-
+            System.out.println("预览2");
+            // 获取当前 IP 地址
             String ipAddress;
             try {
                 ipAddress = InetAddress.getLocalHost().getHostAddress();
+                System.out.println("预览3");
             } catch (UnknownHostException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("error", "无法获取IP地址"));
+                System.out.println("无法获取ip");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error"));
             }
 
             // 生成预览链接，编码路径确保格式正确
-            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
-                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType, username);
+            System.out.println(previewUrl);
 
             return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
         }
-
+        System.out.println("权限错误");
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error"));
     }
 
-    // 用于处理PDF预览请求的方法
-    @GetMapping("/preview/pdf")
-    public ResponseEntity<Resource> previewPdf(@RequestParam String filePath) {
-        try {
-            Path path = Paths.get(URLDecoder.decode(filePath, StandardCharsets.UTF_8.name()));
-            Resource fileResource = new UrlResource(path.toUri());
 
-            if (!fileResource.exists()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-            }
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
-                    .body(fileResource);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 
-    //删除资源
+    //批量删除资源
     @PostMapping("/delete")
     public Map<String, Object> AssetsDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> fileData) {
         String token = header.get("token");
@@ -509,29 +502,52 @@ public class AssetsController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if (userType == 1) {
-            // 使用 GsonUtil 从 JSON 转换为 List<String>
-            List<String> fileNames = GsonUtil.fromJson(fileData.get("fileName").toString(), List.class);
 
-            System.out.println(fileData);
-            System.out.println(fileNames);
+            Type listOfStringType = new TypeToken<List<String>>() {}.getType();
+            Type listOfIntegerType = new TypeToken<List<Integer>>() {}.getType();
 
-            if (fileNames != null && !fileNames.isEmpty()) {
-                // 假设删除所有传入的文件
-                for (String fileName : fileNames) {
-                    String tpath = assetsService.searchTpathByFname(fileName);
-                    String message = assetsService.deleteAssetByFname(fileName);
-                    File file = new File(tpath);
-                    file.delete();
-                }
+            // 转换 JSON 数据
+            List<String> cids = GsonUtil.fromJson(GsonUtil.toJson(fileData.get("cid")), listOfStringType);
+            List<Double> aidDoubles = GsonUtil.fromJson(GsonUtil.toJson(fileData.get("aid")), new TypeToken<List<Double>>() {}.getType());
 
-                String newToken = JWTUtil.generateToken(userType, username);
+            // 转换 List<Double> 为 List<Integer>
+            List<Integer> aids = aidDoubles.stream()
+                    .map(Double::intValue)  // 将 Double 转为 Integer
+                    .collect(Collectors.toList());
 
+            if (cids == null || aids == null || cids.size() != aids.size()) {
                 Map<String, Object> response = new HashMap<>();
-                response.put("status", "success");
-                response.put("message", "文件删除成功");
-                response.put("newToken", newToken);
+                response.put("status", "error");
+                response.put("message", "传入的cid和aid数量不匹配");
                 return response;
             }
+
+            boolean allDeleted = true;
+            for (int i = 0; i < cids.size(); i++) {
+                String cid = cids.get(i);
+                int aid = aids.get(i);
+
+                // 查询路径
+                String tpath = assetsService.searchTpathByCidAndAid(cid, aid);
+                if (tpath != null) {
+                    // 删除数据库记录和文件
+                    assetsService.deleteAssetByCidAndAid(cid, aid);
+                    File file = new File(tpath);
+
+                    if (file.exists() && !file.delete()) {
+                        allDeleted = false;
+                    }
+                } else {
+                    allDeleted = false;
+                }
+            }
+
+            String newToken = JWTUtil.generateToken(userType, username);
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", allDeleted ? "success" : "partial_success");
+            response.put("message", allDeleted ? "文件删除成功" : "文件删除失败");
+            response.put("newToken", newToken);
+            return response;
         }
 
         Map<String, Object> response = new HashMap<>();

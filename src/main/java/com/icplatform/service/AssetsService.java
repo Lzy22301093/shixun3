@@ -47,8 +47,8 @@ public class AssetsService {
         assetsRepositories.save(assets);  // 保存新资产
     }
 
-    public String searchByCidAndAid(String cid, int aid) {
-        return assetsRepositories.findByCidAndAid(cid, aid);
+    public String searchTpathByCidAndAid(String cid, int aid) {
+        return assetsRepositories.findTpathByCidAndAid(cid, aid);
     }
 
     public List<String> getTpathByStarting(String path) {
@@ -57,9 +57,9 @@ public class AssetsService {
         return assetsRepositories.findByTpathStartingWith(normalizedPath + "%"); // 添加 % 以匹配所有后续文件
     }
 
-    public String deleteAssetByFname(String fname) {
+    public String deleteAssetByCidAndAid(String cid, int aid) {
 
-        Assets assets = assetsRepositories.findByFname(fname);
+        Assets assets = assetsRepositories.findByCidAndAid(cid, aid);
         if(assets != null) {
             assetsRepositories.delete(assets);
             String result = "数据库记录删除成功";
@@ -68,5 +68,9 @@ public class AssetsService {
             String result = "数据库记录不存在";
             return result;
         }
+    }
+
+    public int searchAidByTpath(String tpath) {
+        return assetsRepositories.findByTpath(tpath).getAid();
     }
 }

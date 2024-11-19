@@ -1,6 +1,7 @@
 package com.icplatform.service;
 
 
+import com.icplatform.entity.Assets;
 import com.icplatform.entity.Commit;
 import com.icplatform.entity.Homework;
 import com.icplatform.repositories.CommitRepositories;
@@ -83,4 +84,19 @@ public class CommitService {
         }
     }
 
+    public String searchPathByCidAndWorkid(String cid,int workid){
+        return commitRepositories.findByCidAndWorkId(cid,workid).getPath();
+    }
+
+    public String deleteCommitByCidAndWorkid(String cid, int workid) {
+        Commit commit  = commitRepositories.findByCidAndWorkId(cid ,workid);
+        if(commit != null) {
+            commitRepositories.delete(commit);
+            String result = "数据库记录删除成功";
+            return result;
+        }else{
+            String result = "数据库记录不存在";
+            return result;
+        }
+    }
 }
