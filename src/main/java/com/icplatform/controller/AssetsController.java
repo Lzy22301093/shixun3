@@ -40,9 +40,6 @@ import com.icplatform.dto.FileUploadResponse;
 @CrossOrigin(origins = "*")
 public class AssetsController {
 
-    @Value("${files.upload.path}")
-    private String uploadPath;
-
     @Autowired
     private AssetsService assetsService;
 
@@ -71,7 +68,7 @@ public class AssetsController {
             Date currentTime = new Date(System.currentTimeMillis());
 
             // 设置文件夹路径
-            String courseResourcePath = tpath + '/' + originalFilename;
+            String courseResourcePath = tpath  + originalFilename;
 
             System.out.println(tpath);
             System.out.println(courseResourcePath);
@@ -84,6 +81,8 @@ public class AssetsController {
             if (!courseDir.exists()) {
                 courseDir.mkdirs();
             }
+
+            System.out.println("test");
             // 设置上传文件路径
             File uploadFile = new File(courseDir.getAbsolutePath());
 
@@ -94,6 +93,8 @@ public class AssetsController {
 
             // 保存新文件
             file.transferTo(uploadFile);
+
+            System.out.println("test2");
 
             // 检查数据库中是否存在相同的 fname
             try {
@@ -480,9 +481,6 @@ public class AssetsController {
     }
 
 
-
-
-
     //批量删除资源
     @PostMapping("/delete")
     public Map<String, Object> AssetsDelete(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> fileData) {
@@ -554,6 +552,28 @@ public class AssetsController {
         response.put("status", "error");
         response.put("message", "权限不足,删除失败");
         return response;
+    }
+
+    // 用于处理PDF预览请求的方法
+    @GetMapping("/preview/pdf")
+    public ResponseEntity<Resource> previewPdf(@RequestParam String filePath) {
+        try {
+            Path path = Paths.get(URLDecoder.decode(filePath, StandardCharsets.UTF_8.name()));
+            Resource fileResource = new UrlResource(path.toUri());
+
+            if (!fileResource.exists()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
+                    .body(fileResource);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 }

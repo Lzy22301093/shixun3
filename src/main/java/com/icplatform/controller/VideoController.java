@@ -149,7 +149,7 @@ public class VideoController {
                 response.put("status", "success");
                 response.put("message","成功");
                 response.put("newToken", newToken);
-                response.put("notificationList",list);
+                response.put("videoList",list);
                 return response;
             }
         }
@@ -228,9 +228,13 @@ public class VideoController {
                 mimeType = "application/octet-stream"; // 默认 MIME 类型
             }
 
+            // 对文件名进行 URL 编码
+            String encodedFileName = URLEncoder.encode(path.getFileName().toString(), StandardCharsets.UTF_8.name());
+            encodedFileName = encodedFileName.replaceAll("\\+", "%20");  // 将 '+' 替换为 '%20' 确保空格显示正确
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(mimeType))
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + path.getFileName().toString() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + encodedFileName + "\"")
                     .body(fileResource);
 
         } catch (Exception e) {
@@ -238,6 +242,7 @@ public class VideoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
 
 }

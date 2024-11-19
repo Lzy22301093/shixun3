@@ -27,7 +27,7 @@ public class ChangeController {
     public TeacherService teacherService;
 
     @PostMapping("")
-    public ResponseEntity<Map<String, Object>> changeData(@RequestHeader Map<String, String> header, @RequestParam String password) {
+    public ResponseEntity<Map<String, Object>> changeData(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> passwordData) {
 
         Map<String, Object> response = new HashMap<>();
         String token = header.get("token");
@@ -43,6 +43,8 @@ public class ChangeController {
         int userType = decodedJWT.getClaim("usertype").asInt();
 
         if(userType == 0){
+            String password = passwordData.get("password");
+
             Student student = studentService.searchBySno(username);
             if(student != null){
 
@@ -54,6 +56,7 @@ public class ChangeController {
         }else if(userType == 1){
             Teacher teacher = teacherService.searchByTno(username);
             if(teacher != null){
+                String password = passwordData.get("password");
                 if(password !=null){
                     teacher.setPassword(password);
                 }

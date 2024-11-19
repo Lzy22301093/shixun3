@@ -20,7 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
@@ -249,8 +249,7 @@ public class CourseController {
             }
 
             // 生成预览链接，编码文件路径
-            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
-                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType, username);
 
             return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
@@ -294,9 +293,17 @@ public class CourseController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error", ""));
             }
 
-            // 生成预览链接，编码文件路径
-            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" +
-                    URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            // 对文件路径进行 URL 编码
+            String encodedFilePath;
+            try {
+                encodedFilePath = URLEncoder.encode(filePath, StandardCharsets.UTF_8.name());
+                encodedFilePath = encodedFilePath.replaceAll("\\+", "%20");  // 将 '+' 替换为 '%20' 以确保空格正确编码
+            } catch (UnsupportedEncodingException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PreviewLinkResponse("", "error", ""));
+            }
+
+            // 生成预览链接
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" + encodedFilePath;
             String newToken = JWTUtil.generateToken(userType, username);
 
             return ResponseEntity.ok(new PreviewLinkResponse(previewUrl, "success", newToken));
@@ -304,6 +311,7 @@ public class CourseController {
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new PreviewLinkResponse("", "error", ""));
     }
+
 
     //上传课程大纲并更新数据库
     @PostMapping("/outline/upload")
@@ -406,33 +414,6 @@ public class CourseController {
             return new FileUploadResponse("error", "用户权限不足");
         }
     }
-
-
-
-   /* //上传视频
-    @PostMapping("/video/upload")
-    public Map<String, Object> uploadVideo(@RequestHeader Map<String, String> header,
-                                           @RequestParam("videoFile") MultipartFile videoFile,
-                                           @RequestParam("cid") String cid,
-                                           @RequestParam("vid") int vid) throws IOException {
-        String token = header.get("token");
-        DecodedJWT decodedJWT;
-        try {
-            decodedJWT = JWTUtil.verifyToken(token);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("status", "error");
-            response.put("message", "token已被清除或已过期");
-            return response;
-        }
-
-        String username = decodedJWT.getClaim("username").asString();
-        int userType = decodedJWT.getClaim("usertype").asInt();
-
-        if (userType == 1) {
-
-        }
-    }*/
 
 }
 

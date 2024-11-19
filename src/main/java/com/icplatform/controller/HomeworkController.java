@@ -83,9 +83,10 @@ public class HomeworkController {
                 List<Commit> commitList = commitService.findByCid(cid);
 
                 if(commitList != null && commitList.size() > 0) {
+
+                    System.out.println("commitList");
                     List<Map<String, Object>> commitInfoList = new ArrayList<>();
                     for (Commit commit : commitList) {
-
 
                         int publish = commit.getPublish();
                         if (publish == 1) {
@@ -640,7 +641,6 @@ public class HomeworkController {
     }
 
 
-
     //老师查看布置作业的列表
     @PostMapping("/display/homework")
     public Map<String, Object> displayHomework(@RequestHeader Map<String, String> header, @RequestBody Map<String, String> disData) {//cid
@@ -659,7 +659,7 @@ public class HomeworkController {
         String username = decodedJWT.getClaim("username").asString();
         int userType = decodedJWT.getClaim("usertype").asInt();
 
-        if (userType == 1) {
+        if (userType == 1 || userType == 0) {
 
             String cid = disData.get("cid");
             if(cid != null){
@@ -866,7 +866,7 @@ public class HomeworkController {
             }
 
             // 生成预览链接，编码路径确保格式正确
-            String previewUrl = "http://" + ipAddress + ":8080/api/assets/homework/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType, username);
             System.out.println(previewUrl);
 
@@ -918,7 +918,7 @@ public class HomeworkController {
             }
 
             // 生成预览链接，编码路径确保格式正确
-            String previewUrl = "http://" + ipAddress + ":8080/api/assets/homework/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
+            String previewUrl = "http://" + ipAddress + ":8080/api/assets/preview/pdf?filePath=" + URLEncoder.encode(filePath, StandardCharsets.UTF_8);
             String newToken = JWTUtil.generateToken(userType, username);
             System.out.println(previewUrl);
 
