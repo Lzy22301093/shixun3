@@ -111,7 +111,7 @@ public class HomeworkController {
                                     commitInfo.put("submitTime", "未提交");
                                 }
                                 if (commit.getPublishscore() == 1) {
-                                    commitInfo.put("score", homework.getScore());
+                                    commitInfo.put("score", homework.getTeacherscore());
                                 } else {
                                     commitInfo.put("score", "未公布成绩");
                                 }
@@ -204,8 +204,6 @@ public class HomeworkController {
         response.put("message","用户权限错误");
         return response;
     }
-
-
 
     //提交作业
     @PostMapping("/upload")

@@ -73,4 +73,14 @@ public class AssetsService {
     public int searchAidByTpath(String tpath) {
         return assetsRepositories.findByTpath(tpath).getAid();
     }
+
+    public int searchMaxAidByCid(String cid) {
+        int max_cid = 0;
+        List<Assets> assetsList = assetsRepositories.findByCid(cid);
+
+        for (Assets assets : assetsList) {
+            max_cid = Math.max(max_cid, assets.getAid());
+        }
+        return max_cid;
+    }
 }

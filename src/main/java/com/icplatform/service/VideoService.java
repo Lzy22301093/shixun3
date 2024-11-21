@@ -50,4 +50,14 @@ public class VideoService {
         videoRepositories.save(video);
     }
 
+    public String deleteVideoByCidAndVid(String cid, int vid) {
+        Video video = videoRepositories.findByCidAndVid(cid, vid);
+        if(video != null) {
+            videoRepositories.delete(video);
+            return "数据库删除成功";
+        }else{
+            return "数据库记录不存在";
+        }
+    }
+
 }

@@ -98,16 +98,12 @@ public class HomeworkService {
         return homeworkRepositories.findByHname(hname).getPath();
     }
 
-    public String deleteHomeworkByFname(String hname) {
-
-        Homework homework = homeworkRepositories.findByHname(hname);
-        if(homework != null) {
-            homeworkRepositories.delete(homework);
-            String result = "数据库记录删除成功";
-            return result;
-        }else{
-            String result = "数据库记录不存在";
-            return result;
-        }
+    public int searchTeacherScoreByCidSnoAndWorkid(String cid, String sno, int workid) {
+        Homework homework = homeworkRepositories.findByCidAndSnoAndWorkid(cid,sno,workid);
+        if (homework != null) {
+            if(homework.getTeacherscore() != null){
+                return homework.getTeacherscore();
+            }
+        }return 0;
     }
 }

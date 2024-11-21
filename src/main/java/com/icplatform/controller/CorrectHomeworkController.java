@@ -71,7 +71,7 @@ public class CorrectHomeworkController {
                 homeworkInfo.put("id",homework.getId());
                 homeworkInfo.put("path",homework.getPath());
                 homeworkInfo.put("reviestatus",homework.getReviestatus());
-                homeworkInfo.put("score",homework.getScore());
+                homeworkInfo.put("score",homework.getTeacherscore());
                 homeworkInfo.put("start",homework.getStart());
                 homeworkInfo.put("end",homework.getEnd());
                 homeworkInfo.put("stime",homework.getStime());
@@ -173,7 +173,7 @@ public class CorrectHomeworkController {
 
                 if(homework != null){
                     if(scoreNum != null) {
-                        homework.setScore(scoreNum);
+                        homework.setTeacherscore(scoreNum);
                         homework.setComment(comment);
                     }
                     homeworkService.save(homework);
@@ -187,7 +187,7 @@ public class CorrectHomeworkController {
 
                 if(homework != null){
                     if(scoreNum != null) {
-                        homework.setScore(scoreNum);
+                        homework.setTeacherscore(scoreNum);
                     }
                     homeworkService.save(homework);
                 }

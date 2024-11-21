@@ -15,7 +15,7 @@ public interface AssetsRepositories extends JpaRepository<Assets, Integer> {
         return (asset != null) ? asset.getTpath() : null;
     }
 
-    @Query("SELECT a.tpath FROM Assets a WHERE a.tpath LIKE CONCAT(:startWith, '%')")
+    @Query("SELECT a.tpath FROM Assets a WHERE a.tpath LIKE CONCAT(:startWith, '%') ")
     List<String> findByTpathStartingWith(@Param("startWith") String startWith);
 
     // 按文件名查找文件记录
@@ -28,4 +28,6 @@ public interface AssetsRepositories extends JpaRepository<Assets, Integer> {
     Assets findByCidAndAid(String cid, int aid);
 
     Assets findByTpath(String tpath);
+
+    List<Assets> findByCid(String cid);
 }

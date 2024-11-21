@@ -14,7 +14,9 @@ public class Homework {
     private LocalDateTime start;
     private LocalDateTime end;
     private LocalDateTime stime;
-    private Integer score;
+    private Integer teacherscore;
+    private Integer studentscore;
+    private Double totalscore;
     private String path;
     private String sno;
     private String cno;
@@ -25,6 +27,39 @@ public class Homework {
 
     public Homework() {}
 
+    public Homework(int id, String hname, LocalDateTime start, LocalDateTime end, LocalDateTime stime, Integer teacherscore, Integer studentscore, Double totalscore, String path, String sno, String cno, String cid, int workid, String reviestatus, String comment) {
+        this.id = id;
+        this.hname = hname;
+        this.start = start;
+        this.end = end;
+        this.stime = stime;
+        this.teacherscore = teacherscore;
+        this.studentscore = studentscore;
+        this.totalscore = totalscore;
+        this.path = path;
+        this.sno = sno;
+        this.cno = cno;
+        this.cid = cid;
+        this.workid = workid;
+        this.reviestatus = reviestatus;
+        this.comment = comment;
+    }
+
+    public Integer getStudentscore() {
+        return studentscore;
+    }
+
+    public void setStudentscore(Integer student_score) {
+        this.studentscore = student_score;
+    }
+
+    public Double getTotalscore() {
+        return totalscore;
+    }
+
+    public void setTotalscore(Double total_score) {
+        this.totalscore = total_score;
+    }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
@@ -41,8 +76,8 @@ public class Homework {
     public LocalDateTime getStime() { return stime; }
     public void setStime(LocalDateTime stime) { this.stime = stime; }
 
-    public Integer getScore() { return score; }
-    public void setScore(Integer score) { this.score = score; }
+    public Integer getTeacherscore() { return teacherscore; }
+    public void setTeacherscore(Integer teacher_score) { this.teacherscore = teacher_score; }
 
     public String getPath() { return path; }
     public void setPath(String path) { this.path = path; }

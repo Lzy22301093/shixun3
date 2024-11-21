@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.reflect.TypeToken;
 import com.icplatform.dto.DownloadLinkResponse;
 import com.icplatform.dto.PreviewLinkResponse;
+import com.icplatform.entity.Assets;
 import com.icplatform.service.AssetsService;
 import com.icplatform.service.CatalogueService;
 import com.icplatform.utils.GsonUtil;
@@ -48,7 +49,7 @@ public class AssetsController {
 
     //上传资源并更新数据库
     @PostMapping("/upload")
-    public FileUploadResponse uploadFile(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid, @RequestParam("tpath") String tpath, @RequestParam("aid") int aid) throws IOException {
+    public FileUploadResponse uploadFile(@RequestHeader Map<String, String> header, @RequestParam("file") MultipartFile file, @RequestParam("cid") String cid, @RequestParam("tpath") String tpath) throws IOException {
 
         String token = header.get("token");
         DecodedJWT decodedJWT;
@@ -68,14 +69,14 @@ public class AssetsController {
             Date currentTime = new Date(System.currentTimeMillis());
 
             // 设置文件夹路径
-            String courseResourcePath = tpath  + originalFilename;
+            String courseResourcePath = tpath + "/" + originalFilename;
 
-            System.out.println(tpath);
-            System.out.println(courseResourcePath);
+            System.out.println("tpath" + tpath);
+            System.out.println("courseResourcePath" + courseResourcePath);
 
             File courseDir = new File(courseResourcePath);
            // File courseDir = new File(tpath).getParentFile();
-            System.out.println(courseDir.getAbsolutePath());
+            System.out.println("courseDir.getAbsolutePath()"+ courseDir.getAbsolutePath());
 
             // 如果文件夹不存在则创建
             if (!courseDir.exists()) {
@@ -91,6 +92,7 @@ public class AssetsController {
                 uploadFile.delete();
             }
 
+            int max_aid = assetsService.searchMaxAidByCid(cid) + 1;
             // 保存新文件
             file.transferTo(uploadFile);
 
@@ -99,10 +101,10 @@ public class AssetsController {
             // 检查数据库中是否存在相同的 fname
             try {
                 // 存在相同的 fname 则更新记录
-                assetsService.updateAssetByFname(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid, aid); // 将路径中的反斜杠替换为正斜杠
+                assetsService.updateAssetByFname(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid, max_aid); // 将路径中的反斜杠替换为正斜杠
             } catch (IllegalArgumentException e) {
                 // 不存在相同的 fname 则插入新记录
-                assetsService.insertNewAsset(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid, aid); // 将路径中的反斜杠替换为正斜杠
+                assetsService.insertNewAsset(originalFilename, fileType, fileSize, uploadFile.getAbsolutePath().replace("\\", "/"), currentTime, cid, max_aid); // 将路径中的反斜杠替换为正斜杠
             }
 
             String newToken = JWTUtil.generateToken(userType, username);
@@ -234,7 +236,6 @@ public class AssetsController {
                     node.setPath(currentPath);
 
 
-
                     if (!isFile) {
                         node.setChildren(new ArrayList<>());
                     }
@@ -242,6 +243,7 @@ public class AssetsController {
                 });
                 if(isFile){
                     System.out.println("路径： "+nextNode.getPath());
+
                     int aid = assetsService.searchAidByTpath(nextNode.getPath());
 
                     nextNode.setAid(aid);

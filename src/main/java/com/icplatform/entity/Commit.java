@@ -2,10 +2,12 @@ package com.icplatform.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "commit")
 public class Commit {
 
     @Id

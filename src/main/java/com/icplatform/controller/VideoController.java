@@ -243,6 +243,51 @@ public class VideoController {
         }
     }
 
+    //删除视频
+    @PostMapping("/delete")
+    public Map<String, Object> deleteVideo(@RequestHeader Map<String, String> header, @RequestBody Map<String, Object> deleteData) {
+        String token = header.get("token");
+        DecodedJWT decodedJWT;
 
+        try {
+            decodedJWT = JWTUtil.verifyToken(token);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "error");
+            response.put("message", "token已被清除或已过期");
+            return response;
+        }
+
+        String username = decodedJWT.getClaim("username").asString();
+        int userType = decodedJWT.getClaim("usertype").asInt();
+
+        if (userType == 1) {
+            String cid = deleteData.get("cid").toString();
+            int vid = Integer.valueOf(deleteData.get("vid").toString());
+
+            String path = videoService.searchByCidAndVid(cid, vid).getPath();
+
+            if (path != null) {
+                videoService.deleteVideoByCidAndVid(cid, vid);
+
+                File videoFile = new File(path);
+                if (videoFile.exists()) {
+                    videoFile.delete();
+                }
+
+                String newToken = JWTUtil.generateToken(userType, username);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "success");
+                response.put("message", "删除成功");
+                response.put("newToken", newToken);
+                return response;
+            }
+        }
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "权限不足");
+        return response;
+    }
 
 }
